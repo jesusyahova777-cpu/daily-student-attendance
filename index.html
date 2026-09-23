@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="description" content="Track daily student attendance easily">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>📚 Daily Student Attendance</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            padding-top: 60px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .header .date {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 16px;
+            margin-top: -30px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:active {
+            transform: scale(0.95);
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.present .number { color: var(--success); }
+        .stat-card.absent .number { color: var(--danger); }
+        .stat-card.late .number { color: var(--warning); }
+
+        /* Date Picker */
+        .date-picker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--card);
+            margin: 0 16px 16px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .date-picker button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .date-picker button:hover {
+            background: var(--primary-dark);
+        }
+
+        .date-picker input[type="date"] {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 1rem;
+            color: var(--text);
+            background: var(--bg);
+            cursor: pointer;
+        }
+
+        /* Section Title */
+        .section-title {
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title .count {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        /* Add Student Form */
+        .add-student-form {
+            display: flex;
+            gap: 8px;
+            padding: 0 16px 16px;
+        }
+
+        .add-student-form input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .add-student-form input:focus {
+            border-color: var(--primary);
+        }
+
+        .add-student-form button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .add-student-form button:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Student List */
+        .student-list {
+            padding: 0 16px;
+        }
+
+        .student-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .student-card.marked {
+            opacity: 0.85;
+        }
+
+        .student-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .student-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .student-name {
+            font-weight: 600;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .student-roll {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .student-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-present { background: #d1fae5; color: #065f46; }
+        .status-absent { background: #fee2e2; color: #991b1b; }
+        .status-late { background: #fef3c7; color: #92400e; }
+        .status-none { background: #f1f5f9; color: #64748b; }
+
+        /* Attendance Buttons */
+        .attendance-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .attendance-actions button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .attendance-actions button:hover {
+            transform: scale(1.1);
+        }
+
+        .attendance-actions button.active-present {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .attendance-actions button.active-absent {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+
+        .attendance-actions button.active-late {
+            background: var(--warning);
+            border-color: var(--warning);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 32px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 0.7rem;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item .nav-icon {
+            font-size: 1.4rem;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* History Page */
+        .history-list {
+            padding: 16px;
+        }
+
+        .history-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .history-date {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-date .day-name {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .history-stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .history-stat {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .history-stat .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-present { background: var(--success); }
+        .dot-absent { background: var(--danger); }
+        .dot-late { background: var(--warning); }
+
+        /* Students Page */
+        .student-manage-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin: 0 16px 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .student-manage-card .delete-btn {
+            background: #fee2e2;
+            color: var(--danger);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .student-manage-card .delete-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card);
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* Bulk Actions */
+        .bulk-actions {
+            display: flex;
+            gap: 8px;
+            padding: 0 16px 16px;
+        }
+
+        .bulk-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bulk-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .bulk-btn.mark-all-present {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .bulk-btn.mark-all-present:hover {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .student-card {
+            animation: slideUp 0.3s ease forwards;
+        }
+
+        /* Responsive */
+        @media (min-width: 768px) {
+            .stats-container {
+                max-width: 600px;
+                margin: -30px auto 0;
+            }
+
+            .student-list, .history-list {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+
+            .add-student-form {
+                max-width: 600px;
+                margin: 0 auto 16px;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <h1>📚 Daily Student Attendance</h1>
+        <div class="date" id="headerDate"></div>
+    </header>
+
+    <!-- Attendance Page -->
+    <div class="page active" id="page-attendance">
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-card present">
+                <div class="number" id="stat-present">0</div>
+                <div class="label">Present</div>
+            </div>
+            <div class="stat-card absent">
+                <div class="number" id="stat-absent">0</div>
+                <div class="label">Absent</div>
+            </div>
+            <div class="stat-card late">
+                <div class="number" id="stat-late">0</div>
+                <div class="label">Late</div>
+            </div>
+        </div>
+
+        <!-- Date Picker -->
+        <div class="date-picker">
+            <button onclick="changeDate(-1)">◀</button>
+            <input type="date" id="attendanceDate" onchange="loadAttendance()">
+            <button onclick="changeDate(1)">▶</button>
+        </div>
+
+        <!-- Add Student Form -->
+        <form class="add-student-form" onsubmit="addStudent(event)">
+            <input type="text" id="studentName" placeholder="Enter student name..." required>
+            <button type="submit">+ Add</button>
+        </form>
+
+        <!-- Bulk Actions -->
+        <div class="bulk-actions" id="bulkActions" style="display:none">
+            <button class="bulk-btn mark-all-present" onclick="markAll('present')">✓ Mark All Present</button>
+        </div>
+
+        <!-- Student Section -->
+        <div class="section-title">
+            <span>Students</span>
+            <span class="count" id="studentCount">0</span>
+        </div>
+
+        <div class="student-list" id="studentList">
+            <div class="empty-state">
+                <div class="icon">📚</div>
+                <h3>No students yet</h3>
+                <p>Add your first student above to start tracking attendance</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Page -->
+    <div class="page" id="page-history">
+        <div class="section-title" style="margin-top: 16px;">
+            <span>Attendance History</span>
+        </div>
+        <div class="history-list" id="historyList">
+            <div class="empty-state">
+                <div class="icon">📊</div>
+                <h3>No history yet</h3>
+                <p>Mark attendance to see history here</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Management Page -->
+    <div class="page" id="page-students">
+        <div class="section-title" style="margin-top: 16px;">
+            <span>Manage Students</span>
+            <span class="count" id="manageStudentCount">0</span>
+        </div>
+
+        <form class="add-student-form" onsubmit="addStudent(event)" style="margin-top: 8px;">
+            <input type="text" id="studentName2" placeholder="Enter student name..." required>
+            <button type="submit">+ Add</button>
+        </form>
+
+        <div id="manageStudentList"></div>
+    </div>
+
+    <!-- Reports Page -->
+    <div class="page" id="page-reports">
+        <div class="section-title" style="margin-top: 16px;">
+            <span>Reports</span>
+        </div>
+        <div style="padding: 16px;" id="reportsContent">
+            <div class="empty-state">
+                <div class="icon">📈</div>
+                <h3>No data yet</h3>
+                <p>Start marking attendance to generate reports</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchPage('attendance')">
+            <span class="nav-icon">📝</span>
+            <span>Attendance</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('history')">
+            <span class="nav-icon">📅</span>
+            <span>History</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('students')">
+            <span class="nav-icon">📚</span>
+            <span>Students</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('reports')">
+            <span class="nav-icon">📊</span>
+            <span>Reports</span>
+        </button>
+    </nav>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Data Storage
+        let students = JSON.parse(localStorage.getItem('attendance-students') || '[]');
+        let attendanceData = JSON.parse(localStorage.getItem('attendance-data') || '{}');
+        let currentDate = new Date().toISOString().split('T')[0];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('attendanceDate').value = currentDate;
+            updateHeaderDate();
+            renderStudents();
+            renderHistory();
+            renderReports();
+        });
+
+        // Save data
+        function saveData() {
+            localStorage.setItem('attendance-students', JSON.stringify(students));
+            localStorage.setItem('attendance-data', JSON.stringify(attendanceData));
+        }
+
+        // Toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // Update header date
+        function updateHeaderDate() {
+            const date = new Date(currentDate + 'T00:00:00');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('headerDate').textContent = date.toLocaleDateString('en-US', options);
+        }
+
+        // Change date
+        function changeDate(offset) {
+            const date = new Date(currentDate + 'T00:00:00');
+            date.setDate(date.getDate() + offset);
+            currentDate = date.toISOString().split('T')[0];
+            document.getElementById('attendanceDate').value = currentDate;
+            updateHeaderDate();
+            renderStudents();
+        }
+
+        // Load attendance for date
+        function loadAttendance() {
+            currentDate = document.getElementById('attendanceDate').value;
+            updateHeaderDate();
+            renderStudents();
+        }
+
+        // Add student
+        function addStudent(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('studentName') || document.getElementById('studentName2');
+            const name = nameInput.value.trim();
+            
+            if (!name) return;
+
+            // Check for duplicates
+            if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                showToast('⚠️ Student already exists');
+                return;
+            }
+
+            const student = {
+                id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                name: name,
+                rollNo: 'STU' + String(students.length + 1).padStart(3, '0'),
+                createdAt: new Date().toISOString()
+            };
+
+            students.push(student);
+            saveData();
+            nameInput.value = '';
+            renderStudents();
+            renderHistory();
+            renderReports();
+            showToast(`✅ ${name} added successfully`);
+        }
+
+        // Delete student
+        function deleteStudent(id) {
+            const student = students.find(s => s.id === id);
+            if (confirm(`Remove ${student.name}?`)) {
+                students = students.filter(s => s.id !== id);
+                
+                // Clean up attendance records
+                Object.keys(attendanceData).forEach(date => {
+                    delete attendanceData[date][id];
+                });
+                
+                saveData();
+                renderStudents();
+                renderHistory();
+                renderReports();
+                showToast(`🗑️ ${student.name} removed`);
+            }
+        }
+
+        // Mark attendance
+        function markAttendance(studentId, status) {
+            if (!attendanceData[currentDate]) {
+                attendanceData[currentDate] = {};
+            }
+
+            const currentStatus = attendanceData[currentDate][studentId];
+            
+            // Toggle off if same status
+            if (currentStatus === status) {
+                delete attendanceData[currentDate][studentId];
+            } else {
+                attendanceData[currentDate][studentId] = status;
+            }
+
+            saveData();
+            renderStudents();
+            updateStats();
+            renderHistory();
+            renderReports();
+        }
+
+        // Mark all present
+        function markAll(status) {
+            if (!attendanceData[currentDate]) {
+                attendanceData[currentDate] = {};
+            }
+
+            students.forEach(student => {
+                attendanceData[currentDate][student.id] = status;
+            });
+
+            saveData();
+            renderStudents();
+            updateStats();
+            renderHistory();
+            renderReports();
+            showToast(`✅ All students marked ${status}`);
+        }
+
+        // Update stats
+        function updateStats() {
+            const dayData = attendanceData[currentDate] || {};
+            const values = Object.values(dayData);
+            
+            document.getElementById('stat-present').textContent = values.filter(v => v === 'present').length;
+            document.getElementById('stat-absent').textContent = values.filter(v => v === 'absent').length;
+            document.getElementById('stat-late').textContent = values.filter(v => v === 'late').length;
+        }
+
+        // Generate avatar color
+        function getAvatarColor(name) {
+            const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        // Get initials
+        function getInitials(name) {
+            return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        // Render students
+        function renderStudents() {
+            const container = document.getElementById('studentList');
+            const bulkActions = document.getElementById('bulkActions');
+            const dayData = attendanceData[currentDate] || {};
+
+            document.getElementById('studentCount').textContent = students.length;
+
+            if (students.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">👨‍🎓</div>
+                        <h3>No students yet</h3>
+                        <p>Add your first student above to start tracking attendance</p>
+                    </div>
+                `;
+                bulkActions.style.display = 'none';
+                updateStats();
+                return;
+            }
+
+            bulkActions.style.display = 'flex';
+
+            container.innerHTML = students.map((student, index) => {
+                const status = dayData[student.id] || 'none';
+                const statusClass = status === 'none' ? 'status-none' : `status-${status}`;
+                const statusLabel = status === 'none' ? 'Not marked' : status;
+
+                return `
+                    <div class="student-card ${status !== 'none' ? 'marked' : ''}" style="animation-delay: ${index * 0.05}s">
+                        <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
+                            ${getInitials(student.name)}
+                        </div>
+                        <div class="student-info">
+                            <div class="student-name">${student.name}</div>
+                            <div class="student-roll">${student.rollNo}</div>
+                        </div>
+                        <span class="student-status ${statusClass}">${statusLabel}</span>
+                        <div class="attendance-actions">
+                            <button class="${status === 'present' ? 'active-present' : ''}" 
+                                    onclick="markAttendance('${student.id}', 'present')" 
+                                    title="Present">✓</button>
+                            <button class="${status === 'absent' ? 'active-absent' : ''}" 
+                                    onclick="markAttendance('${student.id}', 'absent')" 
+                                    title="Absent">✕</button>
+                            <button class="${status === 'late' ? 'active-late' : ''}" 
+                                    onclick="markAttendance('${student.id}', 'late')" 
+                                    title="Late">⏰</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateStats();
+        }
+
+        // Render history
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            const dates = Object.keys(attendanceData).sort().reverse().filter(date => {
+                return Object.keys(attendanceData[date]).length > 0;
+            });
+
+            if (dates.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📊</div>
+                        <h3>No history yet</h3>
+                        <p>Mark attendance to see history here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = dates.map(date => {
+                const dayData = attendanceData[date];
+                const values = Object.values(dayData);
+                const d = new Date(date + 'T00:00:00');
+                const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                return `
+                    <div class="history-card">
+                        <div class="history-date">
+                            <span class="day-name">${dayName}</span>
+                            ${dateStr}
+                        </div>
+                        <div class="history-stats">
+                            <div class="history-stat">
+                                <span class="dot dot-present"></span>
+                                Present: ${values.filter(v => v === 'present').length}
+                            </div>
+                            <div class="history-stat">
+                                <span class="dot dot-absent"></span>
+                                Absent: ${values.filter(v => v === 'absent').length}
+                            </div>
+                            <div class="history-stat">
+                                <span class="dot dot-late"></span>
+                                Late: ${values.filter(v => v === 'late').length}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render reports
+        function renderReports() {
+            const container = document.getElementById('reportsContent');
+            
+            if (students.length === 0 || Object.keys(attendanceData).length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📈</div>
+                        <h3>No data yet</h3>
+                        <p>Start marking attendance to generate reports</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate student stats
+            const studentStats = students.map(student => {
+                let present = 0, absent = 0, late = 0, total = 0;
+                
+                Object.values(attendanceData).forEach(dayData => {
+                    if (dayData[student.id]) {
+                        total++;
+                        if (dayData[student.id] === 'present') present++;
+                        if (dayData[student.id] === 'absent') absent++;
+                        if (dayData[student.id] === 'late') late++;
+                    }
+                });
+
+                const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+
+                return { ...student, present, absent, late, total, percentage };
+            }).sort((a, b) => b.percentage - a.percentage);
+
+            container.innerHTML = `
+                <div style="background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px;">
+                    <h3 style="margin-bottom: 12px;">📊 Overall Statistics</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">${students.length}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">Total Students</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">${Object.keys(attendanceData).filter(d => Object.keys(attendanceData[d]).length > 0).length}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">Days Tracked</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="padding: 0 0 12px; font-size: 0.9rem; color: var(--text-secondary);">STUDENT ATTENDANCE RATES</h3>
+                ${studentStats.map(student => `
+                    <div style="background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="student-avatar" style="background: ${getAvatarColor(student.name)}; width: 36px; height: 36px; font-size: 0.9rem;">
+                                    ${getInitials(student.name)}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600;">${student.name}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${student.rollNo}</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: ${student.percentage >= 75 ? 'var(--success)' : student.percentage >= 50 ? 'var(--warning)' : 'var(--danger)'}">
+                                ${student.percentage}%
+                            </div>
+                        </div>
+                        <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                            <div style="background: ${student.percentage >= 75 ? 'var(--success)' : student.percentage >= 50 ? 'var(--warning)' : 'var(--danger)'}; height: 100%; width: ${student.percentage}%; border-radius: 10px; transition: width 0.3s;"></div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-top: 8px; font-size: 0.75rem; color: var(--text-secondary);">
+                            <span>✓ ${student.present}</span>
+                            <span>✕ ${student.absent}</span>
+                            <span>⏰ ${student.late}</span>
+                            <span>Total: ${student.total}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Render manage students
+        function renderManageStudents() {
+            const container = document.getElementById('manageStudentList');
+            document.getElementById('manageStudentCount').textContent = students.length;
+
+            if (students.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📚</div>
+                    <h3>No students yet</h3>
+                    <p>Add your first student above</p>
+                </div>
+            `;
+                return;
+            }
+
+            container.innerHTML = students.map(student => `
+                <div class="student-manage-card">
+                    <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
+                        ${getInitials(student.name)}
+                    </div>
+                    <div class="student-info">
+                        <div class="student-name">${student.name}</div>
+                        <div class="student-roll">${student.rollNo}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        // Switch page
+        function switchPage(page) {
+            // Update pages
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            // Refresh data for page
+            if (page === 'students') renderManageStudents();
+            if (page === 'history') renderHistory();
+            if (page === 'reports') renderReports();
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+    </script>
+</body>
+</html>
