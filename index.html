@@ -220,6 +220,7 @@
             box-shadow: var(--shadow);
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
             gap: 12px;
             transition: all 0.2s;
         }
@@ -249,9 +250,8 @@
         .student-name {
             font-weight: 600;
             font-size: 1rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            word-break: break-word;
+            white-space: normal;
         }
 
         .student-roll {
@@ -275,21 +275,27 @@
         /* Attendance Buttons */
         .attendance-actions {
             display: flex;
-            gap: 6px;
-            flex-shrink: 0;
+            gap: 8px;
+            width: 100%;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
         }
 
         .attendance-actions button {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            flex: 1;
+            min-width: 0;
+            height: 40px;
+            border-radius: 10px;
             border: 2px solid var(--border);
             background: white;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             transition: all 0.2s;
         }
 
@@ -927,13 +933,13 @@
                         <div class="attendance-actions">
                             <button class="${status === 'present' ? 'active-present' : ''}" 
                                     onclick="markAttendance('${student.id}', 'present')" 
-                                    title="Present">✓</button>
+                                    title="Present">✓ Present</button>
                             <button class="${status === 'absent' ? 'active-absent' : ''}" 
                                     onclick="markAttendance('${student.id}', 'absent')" 
-                                    title="Absent">✕</button>
+                                    title="Absent">✕ Absent</button>
                             <button class="${status === 'late' ? 'active-late' : ''}" 
                                     onclick="markAttendance('${student.id}', 'late')" 
-                                    title="Late">⏰</button>
+                                    title="Late">⏰ Late</button>
                         </div>
                     </div>
                 `;

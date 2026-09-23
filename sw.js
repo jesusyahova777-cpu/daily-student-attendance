@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-v1';
+const CACHE_NAME = 'attendance-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -16,7 +16,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate
+// Activate - delete all old caches so users get the new version
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -32,18 +32,22 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch
+// Fetch - network first so updates reach users, cache as offline fallback
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(response => {
-        if (response) {
-          return response;
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         }
-        return fetch(event.request);
+        return response;
       })
       .catch(() => {
-        return caches.match('./index.html');
+        return caches.match(event.request).then(cached => {
+          return cached || caches.match('./index.html');
+        });
       })
   );
 });
