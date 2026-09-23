@@ -381,6 +381,116 @@
             background: #fee2e2;
         }
 
+        .mini-delete.edit:hover {
+            color: var(--primary);
+            background: #e0e7ff;
+        }
+
+        /* Edit Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card);
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .modal label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 14px 0 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .modal input:focus {
+            border-color: var(--primary);
+        }
+
+        .modal .save-btn {
+            margin-top: 20px;
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal .save-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .edit-btn {
+            background: #e0e7ff;
+            color: var(--primary);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .edit-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
         /* Attendance Buttons */
         .attendance-actions {
             display: flex;
@@ -830,6 +940,22 @@
         </button>
     </nav>
 
+    <!-- Edit Student Modal -->
+    <div class="modal-overlay" id="editModal" onclick="if(event.target===this) closeEditModal()">
+        <div class="modal">
+            <h2>✏️ Edit Student <button class="modal-close" onclick="closeEditModal()">×</button></h2>
+            <form onsubmit="saveEditStudent(event)">
+                <label for="editName">Student Name</label>
+                <input type="text" id="editName" required>
+                <label for="editRoll">Roll No (ID)</label>
+                <input type="text" id="editRoll" required>
+                <label for="editClass">Class</label>
+                <input type="text" id="editClass" list="classOptions" placeholder="No Class">
+                <button type="submit" class="save-btn">💾 Save Changes</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -841,6 +967,8 @@
         let students = JSON.parse(localStorage.getItem('attendance-students') || '[]');
         let attendanceData = JSON.parse(localStorage.getItem('attendance-data') || '{}');
         let classes = JSON.parse(localStorage.getItem('attendance-classes') || '[]');
+        // Running total counter: roll numbers keep increasing even after deletions
+        let studentCounter = parseInt(localStorage.getItem('attendance-counter') || '0', 10) || students.length;
         let currentDate = new Date().toISOString().split('T')[0];
         let selectedClass = 'all';   // 'all' | 'none' | <classId>
         let searchQuery = '';
@@ -857,6 +985,7 @@
             localStorage.setItem('attendance-students', JSON.stringify(students));
             localStorage.setItem('attendance-data', JSON.stringify(attendanceData));
             localStorage.setItem('attendance-classes', JSON.stringify(classes));
+            localStorage.setItem('attendance-counter', String(studentCounter));
         }
 
         // Render everything
@@ -989,10 +1118,11 @@
 
             const cls = getOrCreateClass(className);
 
+            studentCounter += 1;
             const student = {
                 id: Date.now().toString(36) + Math.random().toString(36).substr(2),
                 name: name,
-                rollNo: 'STU' + String(students.length + 1).padStart(3, '0'),
+                rollNo: 'STU' + String(studentCounter).padStart(3, '0'),
                 classId: cls ? cls.id : '',
                 createdAt: new Date().toISOString()
             };
@@ -1021,6 +1151,55 @@
                 renderAll();
                 showToast(`🗑️ ${student.name} removed`);
             }
+        }
+
+        // ---------- Edit student ----------
+        let editingStudentId = null;
+
+        function openEditModal(id) {
+            const s = students.find(x => x.id === id);
+            if (!s) return;
+            editingStudentId = id;
+            document.getElementById('editName').value = s.name;
+            document.getElementById('editRoll').value = s.rollNo;
+            document.getElementById('editClass').value = (s.classId && getClass(s.classId)) ? getClass(s.classId).name : '';
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+            editingStudentId = null;
+        }
+
+        function saveEditStudent(e) {
+            e.preventDefault();
+            const s = students.find(x => x.id === editingStudentId);
+            if (!s) { closeEditModal(); return; }
+
+            const name = document.getElementById('editName').value.trim();
+            const roll = document.getElementById('editRoll').value.trim();
+            const clsName = document.getElementById('editClass').value.trim();
+
+            if (!name || !roll) { showToast('⚠️ Name and roll no are required'); return; }
+
+            if (students.some(x => x.id !== s.id && x.name.toLowerCase() === name.toLowerCase())) {
+                showToast('⚠️ Another student already has this name');
+                return;
+            }
+            if (students.some(x => x.id !== s.id && x.rollNo.toLowerCase() === roll.toLowerCase())) {
+                showToast('⚠️ Another student already has this roll no');
+                return;
+            }
+
+            s.name = name;
+            s.rollNo = roll;
+            const cls = getOrCreateClass(clsName);
+            s.classId = cls ? cls.id : '';
+
+            saveData();
+            closeEditModal();
+            renderAll();
+            showToast(`✅ ${name} updated`);
         }
 
         // Mark attendance
@@ -1123,6 +1302,7 @@
                         <div class="student-roll">${student.rollNo} • ${getClassName(student.classId)}</div>
                     </div>
                     <span class="student-status ${statusClass}">${statusLabel}</span>
+                    <button class="mini-delete edit" onclick="openEditModal('${student.id}')" title="Edit student">✏️</button>
                     <button class="mini-delete" onclick="deleteStudent('${student.id}')" title="Delete student">🗑️</button>
                     <div class="attendance-actions">
                         <button class="${status === 'present' ? 'active-present' : ''}"
@@ -1412,6 +1592,7 @@
                             <div class="student-name">${student.name}</div>
                             <div class="student-roll">${student.rollNo}</div>
                         </div>
+                        <button class="edit-btn" onclick="openEditModal('${student.id}')" title="Edit student">✏️</button>
                         <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
                     </div>
                 `).join('');
@@ -1462,7 +1643,8 @@
                 exportedAt: new Date().toISOString(),
                 students: students,
                 classes: classes,
-                attendanceData: attendanceData
+                attendanceData: attendanceData,
+                counter: studentCounter
             };
             downloadFile('attendance-backup-' + currentDate + '.json', JSON.stringify(data, null, 2), 'application/json');
             showToast('⬇️ Backup downloaded');
@@ -1513,6 +1695,7 @@
                 students = data.students;
                 classes = data.classes;
                 attendanceData = data.attendanceData;
+                studentCounter = Math.max(parseInt(data.counter, 10) || 0, students.length);
                 selectedClass = 'all';
                 searchQuery = '';
                 const si = document.getElementById('studentSearch');
