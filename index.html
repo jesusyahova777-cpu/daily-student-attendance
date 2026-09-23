@@ -731,6 +731,12 @@
             <button class="bulk-btn mark-all-present" onclick="markAll('present')">✓ Mark All Present</button>
         </div>
 
+        <!-- Day Actions: WhatsApp + CSV -->
+        <div class="bulk-actions" id="dayActions" style="display:none">
+            <button class="bulk-btn" onclick="whatsAppDayReport()">📲 WhatsApp Report</button>
+            <button class="bulk-btn" onclick="exportAttendanceCSV()">⬇️ Export CSV</button>
+        </div>
+
         <!-- Student Section -->
         <div class="section-title">
             <span>Students</span>
@@ -774,12 +780,26 @@
         <div id="classManagerList"></div>
 
         <div id="manageStudentList"></div>
+
+        <div class="section-title">
+            <span>Data Backup & Export</span>
+        </div>
+        <div class="bulk-actions" style="flex-wrap: wrap;">
+            <button class="bulk-btn" onclick="exportBackup()">⬇️ Backup (JSON)</button>
+            <button class="bulk-btn" onclick="document.getElementById('importFile').click()">⬆️ Restore (JSON)</button>
+            <button class="bulk-btn" onclick="exportStudentsCSV()">⬇️ Students CSV</button>
+            <button class="bulk-btn" onclick="exportAttendanceCSV()">⬇️ Attendance CSV</button>
+        </div>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="onImportFile(this)">
     </div>
 
     <!-- Reports Page -->
     <div class="page" id="page-reports">
         <div class="section-title" style="margin-top: 16px;">
             <span>Reports</span>
+        </div>
+        <div class="bulk-actions">
+            <button class="bulk-btn" onclick="whatsAppSummaryReport()">📲 Share Summary on WhatsApp</button>
         </div>
         <div style="padding: 16px;" id="reportsContent">
             <div class="empty-state">
@@ -1138,6 +1158,7 @@
                     </div>
                 `;
                 bulkActions.style.display = 'none';
+                document.getElementById('dayActions').style.display = 'none';
                 updateStats([]);
                 return;
             }
@@ -1151,11 +1172,13 @@
                     </div>
                 `;
                 bulkActions.style.display = 'none';
+                document.getElementById('dayActions').style.display = 'none';
                 updateStats([]);
                 return;
             }
 
             bulkActions.style.display = 'flex';
+            document.getElementById('dayActions').style.display = 'flex';
 
             // Group by class when showing all without search
             if (selectedClass === 'all' && !searchQuery && classes.length > 0) {
@@ -1411,6 +1434,168 @@
             if (page === 'students') renderManageStudents();
             if (page === 'history') renderHistory();
             if (page === 'reports') renderReports();
+        }
+
+        // ---------- Import / Export ----------
+        function downloadFile(filename, content, mime) {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function csvCell(v) {
+            v = String(v == null ? '' : v);
+            if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+            return v;
+        }
+
+        function exportBackup() {
+            const data = {
+                app: 'daily-student-attendance',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                students: students,
+                classes: classes,
+                attendanceData: attendanceData
+            };
+            downloadFile('attendance-backup-' + currentDate + '.json', JSON.stringify(data, null, 2), 'application/json');
+            showToast('⬇️ Backup downloaded');
+        }
+
+        function exportStudentsCSV() {
+            if (students.length === 0) { showToast('⚠️ No students to export'); return; }
+            const rows = [['Name', 'Roll No', 'Class']];
+            students.forEach(s => rows.push([s.name, s.rollNo, getClassName(s.classId)]));
+            const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
+            downloadFile('students-' + currentDate + '.csv', csv, 'text/csv');
+            showToast('⬇️ Students CSV downloaded');
+        }
+
+        function exportAttendanceCSV() {
+            const rows = [['Date', 'Student', 'Roll No', 'Class', 'Status']];
+            Object.keys(attendanceData).sort().forEach(date => {
+                const dayData = attendanceData[date] || {};
+                students.forEach(s => {
+                    if (dayData[s.id]) rows.push([date, s.name, s.rollNo, getClassName(s.classId), dayData[s.id]]);
+                });
+            });
+            if (rows.length === 1) { showToast('⚠️ No attendance records yet'); return; }
+            const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
+            downloadFile('attendance-' + currentDate + '.csv', csv, 'text/csv');
+            showToast('⬇️ Attendance CSV downloaded');
+        }
+
+        function onImportFile(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                applyImport(String(reader.result));
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function applyImport(text) {
+            try {
+                const data = JSON.parse(text);
+                if (!Array.isArray(data.students) || !Array.isArray(data.classes) || typeof data.attendanceData !== 'object' || data.attendanceData === null) {
+                    showToast('⚠️ Invalid backup file');
+                    return false;
+                }
+                if (!confirm('Replace ALL current data with this backup? Current data will be overwritten.')) return false;
+                students = data.students;
+                classes = data.classes;
+                attendanceData = data.attendanceData;
+                selectedClass = 'all';
+                searchQuery = '';
+                const si = document.getElementById('studentSearch');
+                if (si) si.value = '';
+                saveData();
+                renderAll();
+                showToast('✅ Backup restored: ' + students.length + ' students');
+                return true;
+            } catch (err) {
+                showToast('⚠️ Could not read backup file');
+                return false;
+            }
+        }
+
+        // ---------- WhatsApp Reports ----------
+        function openWhatsApp(text) {
+            window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+        }
+
+        function whatsAppDayReport() {
+            if (students.length === 0) { showToast('⚠️ No students yet'); return; }
+            const d = new Date(currentDate + 'T00:00:00');
+            const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            const dayData = attendanceData[currentDate] || {};
+            const cnt = k => students.filter(s => (dayData[s.id] || 'none') === k).length;
+            const present = cnt('present'), absent = cnt('absent'), late = cnt('late');
+            const lines = [];
+            lines.push('📚 *Daily Student Attendance*');
+            lines.push('📅 ' + dateStr);
+            lines.push('');
+            lines.push('✅ Present: ' + present);
+            lines.push('❌ Absent: ' + absent);
+            lines.push('⏰ Late: ' + late);
+            lines.push('⬜ Not marked: ' + (students.length - present - absent - late));
+            if (classes.length > 0) {
+                lines.push('');
+                classes.forEach(c => {
+                    const grp = students.filter(s => s.classId === c.id);
+                    if (!grp.length) return;
+                    const p = grp.filter(s => dayData[s.id] === 'present').length;
+                    const a = grp.filter(s => dayData[s.id] === 'absent').length;
+                    const l = grp.filter(s => dayData[s.id] === 'late').length;
+                    lines.push('🏫 ' + c.name + ': ✅' + p + ' ❌' + a + ' ⏰' + l);
+                });
+            }
+            const absentList = students.filter(s => dayData[s.id] === 'absent');
+            if (absentList.length) {
+                lines.push('');
+                lines.push('❌ *Absent:*');
+                absentList.forEach(s => lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ')'));
+            }
+            const lateList = students.filter(s => dayData[s.id] === 'late');
+            if (lateList.length) {
+                lines.push('');
+                lines.push('⏰ *Late:*');
+                lateList.forEach(s => lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ')'));
+            }
+            openWhatsApp(lines.join('\n'));
+            showToast('📲 Opening WhatsApp...');
+        }
+
+        function whatsAppSummaryReport() {
+            if (students.length === 0) { showToast('⚠️ No students yet'); return; }
+            const lines = [];
+            lines.push('📚 *Attendance Summary Report*');
+            lines.push('👨‍🎓 Students: ' + students.length + ' | 🏫 Classes: ' + classes.length);
+            lines.push('📅 Days tracked: ' + Object.keys(attendanceData).filter(d0 => Object.keys(attendanceData[d0] || {}).length > 0).length);
+            lines.push('');
+            students.forEach(s => {
+                let p = 0, a = 0, l = 0, t = 0;
+                Object.values(attendanceData).forEach(dd => {
+                    if (dd[s.id]) {
+                        t++;
+                        if (dd[s.id] === 'present') p++;
+                        else if (dd[s.id] === 'absent') a++;
+                        else l++;
+                    }
+                });
+                const pct = t > 0 ? Math.round((p / t) * 100) : 0;
+                lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ') — ' + pct + '% (✅' + p + ' ❌' + a + ' ⏰' + l + ')');
+            });
+            openWhatsApp(lines.join('\n'));
+            showToast('📲 Opening WhatsApp...');
         }
 
         // Register Service Worker
