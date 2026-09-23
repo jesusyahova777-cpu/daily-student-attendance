@@ -114,7 +114,7 @@
             gap: 12px;
             padding: 12px 16px;
             background: var(--card);
-            margin: 0 16px 16px;
+            margin: 0 16px 12px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
         }
@@ -148,6 +148,68 @@
             cursor: pointer;
         }
 
+        /* Search Box */
+        .search-box {
+            position: relative;
+            padding: 0 16px 12px;
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-60%);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            outline: none;
+            background: var(--card);
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Class Chips */
+        .class-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 0 16px 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .class-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .class-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .class-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
         /* Section Title */
         .section-title {
             padding: 8px 16px;
@@ -169,25 +231,56 @@
             font-size: 0.75rem;
         }
 
+        /* Class Group Header */
+        .class-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 16px 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .class-header .class-count {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 1px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
         /* Add Student Form */
         .add-student-form {
             display: flex;
             gap: 8px;
-            padding: 0 16px 16px;
+            padding: 0 16px 12px;
+            flex-wrap: wrap;
         }
 
         .add-student-form input {
-            flex: 1;
             padding: 12px 16px;
             border: 2px solid var(--border);
             border-radius: var(--radius);
             font-size: 1rem;
             outline: none;
             transition: border-color 0.2s;
+            background: var(--card);
         }
 
         .add-student-form input:focus {
             border-color: var(--primary);
+        }
+
+        .add-student-form .name-input {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .add-student-form .class-input {
+            width: 38%;
+            min-width: 110px;
         }
 
         .add-student-form button {
@@ -272,6 +365,22 @@
         .status-late { background: #fef3c7; color: #92400e; }
         .status-none { background: #f1f5f9; color: #64748b; }
 
+        .mini-delete {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .mini-delete:hover {
+            color: var(--danger);
+            background: #fee2e2;
+        }
+
         /* Attendance Buttons */
         .attendance-actions {
             display: flex;
@@ -300,7 +409,7 @@
         }
 
         .attendance-actions button:hover {
-            transform: scale(1.1);
+            transform: scale(1.03);
         }
 
         .attendance-actions button.active-present {
@@ -465,6 +574,8 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            margin-left: auto;
+            flex-shrink: 0;
         }
 
         .student-manage-card .delete-btn:hover {
@@ -488,52 +599,14 @@
             opacity: 0;
             transition: all 0.3s ease;
             white-space: nowrap;
+            max-width: 90vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .toast.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
-        }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 200;
-            display: none;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--card);
-            border-radius: 20px 20px 0 0;
-            padding: 24px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal h2 {
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .modal-close {
-            margin-left: auto;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-secondary);
         }
 
         /* Bulk Actions */
@@ -592,11 +665,15 @@
                 margin: 0 auto;
             }
 
-            .add-student-form {
+            .add-student-form, .search-box, .class-chips, .bulk-actions {
                 max-width: 600px;
-                margin: 0 auto 16px;
-                padding: 0;
+                margin: 0 auto 12px;
+                padding-left: 0;
+                padding-right: 0;
             }
+
+            .search-box { padding-left: 0; padding-right: 0; }
+            .search-box .search-icon { left: 14px; }
         }
     </style>
 </head>
@@ -633,9 +710,19 @@
             <button onclick="changeDate(1)">▶</button>
         </div>
 
+        <!-- Search -->
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="studentSearch" placeholder="Search student to mark attendance..." oninput="onSearch(this.value)">
+        </div>
+
+        <!-- Class Filter Chips -->
+        <div class="class-chips" id="classChips"></div>
+
         <!-- Add Student Form -->
         <form class="add-student-form" onsubmit="addStudent(event)">
-            <input type="text" id="studentName" placeholder="Enter student name..." required>
+            <input type="text" class="name-input" placeholder="Student name..." required>
+            <input type="text" class="class-input" placeholder="Class (e.g. Grade 5)" list="classOptions">
             <button type="submit">+ Add</button>
         </form>
 
@@ -650,13 +737,7 @@
             <span class="count" id="studentCount">0</span>
         </div>
 
-        <div class="student-list" id="studentList">
-            <div class="empty-state">
-                <div class="icon">📚</div>
-                <h3>No students yet</h3>
-                <p>Add your first student above to start tracking attendance</p>
-            </div>
-        </div>
+        <div class="student-list" id="studentList"></div>
     </div>
 
     <!-- History Page -->
@@ -681,9 +762,16 @@
         </div>
 
         <form class="add-student-form" onsubmit="addStudent(event)" style="margin-top: 8px;">
-            <input type="text" id="studentName2" placeholder="Enter student name..." required>
+            <input type="text" class="name-input" placeholder="Student name..." required>
+            <input type="text" class="class-input" placeholder="Class (e.g. Grade 5)" list="classOptions">
             <button type="submit">+ Add</button>
         </form>
+
+        <div class="section-title">
+            <span>Classes</span>
+            <span class="count" id="classCount">0</span>
+        </div>
+        <div id="classManagerList"></div>
 
         <div id="manageStudentList"></div>
     </div>
@@ -725,25 +813,111 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Class name suggestions -->
+    <datalist id="classOptions"></datalist>
+
     <script>
         // Data Storage
         let students = JSON.parse(localStorage.getItem('attendance-students') || '[]');
         let attendanceData = JSON.parse(localStorage.getItem('attendance-data') || '{}');
+        let classes = JSON.parse(localStorage.getItem('attendance-classes') || '[]');
         let currentDate = new Date().toISOString().split('T')[0];
+        let selectedClass = 'all';   // 'all' | 'none' | <classId>
+        let searchQuery = '';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('attendanceDate').value = currentDate;
             updateHeaderDate();
-            renderStudents();
-            renderHistory();
-            renderReports();
+            renderAll();
         });
 
         // Save data
         function saveData() {
             localStorage.setItem('attendance-students', JSON.stringify(students));
             localStorage.setItem('attendance-data', JSON.stringify(attendanceData));
+            localStorage.setItem('attendance-classes', JSON.stringify(classes));
+        }
+
+        // Render everything
+        function renderAll() {
+            renderStudents();
+            renderHistory();
+            renderReports();
+            renderManageStudents();
+            updateClassOptions();
+        }
+
+        // ---------- Class helpers ----------
+        function getClass(id) {
+            return classes.find(c => c.id === id);
+        }
+
+        function getClassName(id) {
+            const c = getClass(id);
+            return c ? c.name : 'No Class';
+        }
+
+        function getOrCreateClass(name) {
+            const t = (name || '').trim();
+            if (!t) return null;
+            let c = classes.find(c => c.name.toLowerCase() === t.toLowerCase());
+            if (!c) {
+                c = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    name: t
+                };
+                classes.push(c);
+            }
+            return c;
+        }
+
+        function hasUnclassed() {
+            return students.some(s => !s.classId || !getClass(s.classId));
+        }
+
+        function deleteClass(id) {
+            const c = getClass(id);
+            if (!c) return;
+            const count = students.filter(s => s.classId === id).length;
+            if (confirm(`Delete class "${c.name}"? ${count} student(s) will move to "No Class".`)) {
+                classes = classes.filter(cl => cl.id !== id);
+                students.forEach(s => { if (s.classId === id) s.classId = ''; });
+                if (selectedClass === id) selectedClass = 'all';
+                saveData();
+                renderAll();
+                showToast(`🗑️ Class ${c.name} deleted`);
+            }
+        }
+
+        function updateClassOptions() {
+            const dl = document.getElementById('classOptions');
+            dl.innerHTML = classes.map(c => `<option value="${c.name}">`).join('');
+            document.getElementById('classCount').textContent = classes.length;
+        }
+
+        // ---------- Filtering ----------
+        function filteredStudents() {
+            let list = students;
+            if (selectedClass === 'none') {
+                list = list.filter(s => !s.classId || !getClass(s.classId));
+            } else if (selectedClass !== 'all') {
+                list = list.filter(s => s.classId === selectedClass);
+            }
+            if (searchQuery) {
+                list = list.filter(s => s.name.toLowerCase().includes(searchQuery));
+            }
+            return list;
+        }
+
+        function onSearch(value) {
+            searchQuery = value.trim().toLowerCase();
+            renderStudents();
+        }
+
+        function selectClass(id) {
+            selectedClass = id;
+            renderStudents();
         }
 
         // Toast notification
@@ -781,9 +955,10 @@
         // Add student
         function addStudent(e) {
             e.preventDefault();
-            const nameInput = document.getElementById('studentName') || document.getElementById('studentName2');
-            const name = nameInput.value.trim();
-            
+            const form = e.target;
+            const name = form.querySelector('.name-input').value.trim();
+            const className = form.querySelector('.class-input').value.trim();
+
             if (!name) return;
 
             // Check for duplicates
@@ -792,37 +967,38 @@
                 return;
             }
 
+            const cls = getOrCreateClass(className);
+
             const student = {
                 id: Date.now().toString(36) + Math.random().toString(36).substr(2),
                 name: name,
                 rollNo: 'STU' + String(students.length + 1).padStart(3, '0'),
+                classId: cls ? cls.id : '',
                 createdAt: new Date().toISOString()
             };
 
             students.push(student);
             saveData();
-            nameInput.value = '';
-            renderStudents();
-            renderHistory();
-            renderReports();
-            showToast(`✅ ${name} added successfully`);
+            form.querySelector('.name-input').value = '';
+            form.querySelector('.class-input').value = '';
+            renderAll();
+            showToast(`✅ ${name} added${cls ? ' to ' + cls.name : ''}`);
         }
 
         // Delete student
         function deleteStudent(id) {
             const student = students.find(s => s.id === id);
-            if (confirm(`Remove ${student.name}?`)) {
+            if (!student) return;
+            if (confirm(`Remove ${student.name}? Their attendance records will also be deleted.`)) {
                 students = students.filter(s => s.id !== id);
-                
+
                 // Clean up attendance records
                 Object.keys(attendanceData).forEach(date => {
                     delete attendanceData[date][id];
                 });
-                
+
                 saveData();
-                renderStudents();
-                renderHistory();
-                renderReports();
+                renderAll();
                 showToast(`🗑️ ${student.name} removed`);
             }
         }
@@ -834,7 +1010,7 @@
             }
 
             const currentStatus = attendanceData[currentDate][studentId];
-            
+
             // Toggle off if same status
             if (currentStatus === status) {
                 delete attendanceData[currentDate][studentId];
@@ -844,37 +1020,41 @@
 
             saveData();
             renderStudents();
-            updateStats();
             renderHistory();
             renderReports();
         }
 
-        // Mark all present
+        // Mark all present (filtered view)
         function markAll(status) {
             if (!attendanceData[currentDate]) {
                 attendanceData[currentDate] = {};
             }
 
-            students.forEach(student => {
+            filteredStudents().forEach(student => {
                 attendanceData[currentDate][student.id] = status;
             });
 
             saveData();
             renderStudents();
-            updateStats();
             renderHistory();
             renderReports();
-            showToast(`✅ All students marked ${status}`);
+            showToast(`✅ All shown students marked ${status}`);
         }
 
-        // Update stats
-        function updateStats() {
+        // Update stats (filtered view)
+        function updateStats(list) {
             const dayData = attendanceData[currentDate] || {};
-            const values = Object.values(dayData);
-            
-            document.getElementById('stat-present').textContent = values.filter(v => v === 'present').length;
-            document.getElementById('stat-absent').textContent = values.filter(v => v === 'absent').length;
-            document.getElementById('stat-late').textContent = values.filter(v => v === 'late').length;
+            const ids = new Set(list.map(s => s.id));
+            let p = 0, a = 0, l = 0;
+            Object.keys(dayData).forEach(id => {
+                if (!ids.has(id)) return;
+                if (dayData[id] === 'present') p++;
+                else if (dayData[id] === 'absent') a++;
+                else if (dayData[id] === 'late') l++;
+            });
+            document.getElementById('stat-present').textContent = p;
+            document.getElementById('stat-absent').textContent = a;
+            document.getElementById('stat-late').textContent = l;
         }
 
         // Generate avatar color
@@ -892,13 +1072,62 @@
             return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
         }
 
+        // Render class filter chips
+        function renderClassChips() {
+            const container = document.getElementById('classChips');
+            let chips = `<button class="class-chip ${selectedClass === 'all' ? 'active' : ''}" onclick="selectClass('all')"> All</button>`;
+            classes.forEach(c => {
+                chips += `<button class="class-chip ${selectedClass === c.id ? 'active' : ''}" onclick="selectClass('${c.id}')">${c.name}</button>`;
+            });
+            if (hasUnclassed()) {
+                chips += `<button class="class-chip ${selectedClass === 'none' ? 'active' : ''}" onclick="selectClass('none')">No Class</button>`;
+            }
+            container.innerHTML = chips;
+            container.style.display = (classes.length > 0 || hasUnclassed()) ? 'flex' : 'none';
+        }
+
+        // Student card HTML
+        function studentCardHTML(student, index) {
+            const dayData = attendanceData[currentDate] || {};
+            const status = dayData[student.id] || 'none';
+            const statusClass = status === 'none' ? 'status-none' : `status-${status}`;
+            const statusLabel = status === 'none' ? 'Not marked' : status;
+
+            return `
+                <div class="student-card ${status !== 'none' ? 'marked' : ''}" style="animation-delay: ${Math.min(index, 10) * 0.05}s">
+                    <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
+                        ${getInitials(student.name)}
+                    </div>
+                    <div class="student-info">
+                        <div class="student-name">${student.name}</div>
+                        <div class="student-roll">${student.rollNo} • ${getClassName(student.classId)}</div>
+                    </div>
+                    <span class="student-status ${statusClass}">${statusLabel}</span>
+                    <button class="mini-delete" onclick="deleteStudent('${student.id}')" title="Delete student">🗑️</button>
+                    <div class="attendance-actions">
+                        <button class="${status === 'present' ? 'active-present' : ''}"
+                                onclick="markAttendance('${student.id}', 'present')"
+                                title="Present">✓ Present</button>
+                        <button class="${status === 'absent' ? 'active-absent' : ''}"
+                                onclick="markAttendance('${student.id}', 'absent')"
+                                title="Absent">✕ Absent</button>
+                        <button class="${status === 'late' ? 'active-late' : ''}"
+                                onclick="markAttendance('${student.id}', 'late')"
+                                title="Late">⏰ Late</button>
+                    </div>
+                </div>
+            `;
+        }
+
         // Render students
         function renderStudents() {
             const container = document.getElementById('studentList');
             const bulkActions = document.getElementById('bulkActions');
-            const dayData = attendanceData[currentDate] || {};
 
-            document.getElementById('studentCount').textContent = students.length;
+            renderClassChips();
+
+            const list = filteredStudents();
+            document.getElementById('studentCount').textContent = list.length;
 
             if (students.length === 0) {
                 container.innerHTML = `
@@ -909,43 +1138,54 @@
                     </div>
                 `;
                 bulkActions.style.display = 'none';
-                updateStats();
+                updateStats([]);
+                return;
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <h3>No matching students</h3>
+                        <p>Try a different search or class filter</p>
+                    </div>
+                `;
+                bulkActions.style.display = 'none';
+                updateStats([]);
                 return;
             }
 
             bulkActions.style.display = 'flex';
 
-            container.innerHTML = students.map((student, index) => {
-                const status = dayData[student.id] || 'none';
-                const statusClass = status === 'none' ? 'status-none' : `status-${status}`;
-                const statusLabel = status === 'none' ? 'Not marked' : status;
+            // Group by class when showing all without search
+            if (selectedClass === 'all' && !searchQuery && classes.length > 0) {
+                let html = '';
+                let index = 0;
+                classes.forEach(c => {
+                    const group = students.filter(s => s.classId === c.id);
+                    if (group.length === 0) return;
+                    html += `
+                        <div class="class-header">
+                            🏫 ${c.name} <span class="class-count">${group.length}</span>
+                        </div>
+                    `;
+                    html += group.map(s => studentCardHTML(s, index++)).join('');
+                });
+                const unclassed = students.filter(s => !s.classId || !getClass(s.classId));
+                if (unclassed.length > 0) {
+                    html += `
+                        <div class="class-header">
+                            📁 No Class <span class="class-count">${unclassed.length}</span>
+                        </div>
+                    `;
+                    html += unclassed.map(s => studentCardHTML(s, index++)).join('');
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = list.map((s, i) => studentCardHTML(s, i)).join('');
+            }
 
-                return `
-                    <div class="student-card ${status !== 'none' ? 'marked' : ''}" style="animation-delay: ${index * 0.05}s">
-                        <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
-                            ${getInitials(student.name)}
-                        </div>
-                        <div class="student-info">
-                            <div class="student-name">${student.name}</div>
-                            <div class="student-roll">${student.rollNo}</div>
-                        </div>
-                        <span class="student-status ${statusClass}">${statusLabel}</span>
-                        <div class="attendance-actions">
-                            <button class="${status === 'present' ? 'active-present' : ''}" 
-                                    onclick="markAttendance('${student.id}', 'present')" 
-                                    title="Present">✓ Present</button>
-                            <button class="${status === 'absent' ? 'active-absent' : ''}" 
-                                    onclick="markAttendance('${student.id}', 'absent')" 
-                                    title="Absent">✕ Absent</button>
-                            <button class="${status === 'late' ? 'active-late' : ''}" 
-                                    onclick="markAttendance('${student.id}', 'late')" 
-                                    title="Late">⏰ Late</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            updateStats();
+            updateStats(list);
         }
 
         // Render history
@@ -1001,7 +1241,7 @@
         // Render reports
         function renderReports() {
             const container = document.getElementById('reportsContent');
-            
+
             if (students.length === 0 || Object.keys(attendanceData).length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -1016,7 +1256,7 @@
             // Calculate student stats
             const studentStats = students.map(student => {
                 let present = 0, absent = 0, late = 0, total = 0;
-                
+
                 Object.values(attendanceData).forEach(dayData => {
                     if (dayData[student.id]) {
                         total++;
@@ -1040,6 +1280,10 @@
                             <div style="font-size: 0.8rem; color: var(--text-secondary);">Total Students</div>
                         </div>
                         <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">${classes.length}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">Classes</div>
+                        </div>
+                        <div>
                             <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">${Object.keys(attendanceData).filter(d => Object.keys(attendanceData[d]).length > 0).length}</div>
                             <div style="font-size: 0.8rem; color: var(--text-secondary);">Days Tracked</div>
                         </div>
@@ -1056,7 +1300,7 @@
                                 </div>
                                 <div>
                                     <div style="font-weight: 600;">${student.name}</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${student.rollNo}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${student.rollNo} • ${getClassName(student.classId)}</div>
                                 </div>
                             </div>
                             <div style="font-size: 1.25rem; font-weight: 700; color: ${student.percentage >= 75 ? 'var(--success)' : student.percentage >= 50 ? 'var(--warning)' : 'var(--danger)'}">
@@ -1077,34 +1321,80 @@
             `;
         }
 
-        // Render manage students
+        // Render class manager (Students page)
+        function renderClassManager() {
+            const container = document.getElementById('classManagerList');
+            if (classes.length === 0) {
+                container.innerHTML = `
+                    <div class="student-manage-card" style="color: var(--text-secondary); font-size: 0.9rem;">
+                        No classes yet. Type a class name when adding a student to create one.
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = classes.map(c => {
+                const count = students.filter(s => s.classId === c.id).length;
+                return `
+                    <div class="student-manage-card">
+                        <div class="student-avatar" style="background: var(--primary);">🏫</div>
+                        <div class="student-info">
+                            <div class="student-name">${c.name}</div>
+                            <div class="student-roll">${count} student(s)</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteClass('${c.id}')" title="Delete class">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render manage students (grouped by class)
         function renderManageStudents() {
             const container = document.getElementById('manageStudentList');
             document.getElementById('manageStudentCount').textContent = students.length;
 
+            renderClassManager();
+
             if (students.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📚</div>
-                    <h3>No students yet</h3>
-                    <p>Add your first student above</p>
-                </div>
-            `;
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📚</div>
+                        <h3>No students yet</h3>
+                        <p>Add your first student above</p>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = students.map(student => `
-                <div class="student-manage-card">
-                    <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
-                        ${getInitials(student.name)}
+            let html = '';
+            const groups = [];
+            classes.forEach(c => {
+                const group = students.filter(s => s.classId === c.id);
+                if (group.length) groups.push({ name: c.name, list: group });
+            });
+            const unclassed = students.filter(s => !s.classId || !getClass(s.classId));
+            if (unclassed.length) groups.push({ name: 'No Class', list: unclassed });
+
+            groups.forEach(g => {
+                html += `
+                    <div class="class-header">
+                        🏫 ${g.name} <span class="class-count">${g.list.length}</span>
                     </div>
-                    <div class="student-info">
-                        <div class="student-name">${student.name}</div>
-                        <div class="student-roll">${student.rollNo}</div>
+                `;
+                html += g.list.map(student => `
+                    <div class="student-manage-card">
+                        <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
+                            ${getInitials(student.name)}
+                        </div>
+                        <div class="student-info">
+                            <div class="student-name">${student.name}</div>
+                            <div class="student-roll">${student.rollNo}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
                     </div>
-                    <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
-                </div>
-            `).join('');
+                `).join('');
+            });
+
+            container.innerHTML = html;
         }
 
         // Switch page
