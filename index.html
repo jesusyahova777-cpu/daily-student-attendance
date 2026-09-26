@@ -596,6 +596,113 @@
             color: white;
         }
 
+        /* Lock Screen */
+        .lock-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lock-overlay.show {
+            display: flex;
+        }
+
+        .lock-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .lock-card .lock-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+        }
+
+        .lock-card h2 {
+            font-size: 1.15rem;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .lock-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .lock-card input {
+            width: 100%;
+            padding: 13px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            text-align: center;
+            letter-spacing: 2px;
+            background: var(--card);
+            color: var(--text);
+        }
+
+        .lock-card input:focus {
+            border-color: var(--primary);
+        }
+
+        .lock-card button {
+            margin-top: 14px;
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .lock-error {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-top: 10px;
+            min-height: 1em;
+        }
+
+        /* Confirm (YES/NO) dialog */
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .confirm-actions button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+        }
+
+        .confirm-no {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .confirm-yes {
+            background: var(--danger);
+            color: white;
+        }
+
         /* Classes Folder */
         .folder-card {
             width: 100%;
@@ -983,6 +1090,18 @@
 </head>
 <body>
 
+    <!-- Lock Screen -->
+    <div class="lock-overlay" id="lockOverlay">
+        <form class="lock-card" onsubmit="tryUnlock(event)">
+            <div class="lock-icon">🔒</div>
+            <h2>📚 Daily Student Attendance</h2>
+            <p>Enter your password to open the app</p>
+            <input type="password" id="unlockInput" placeholder="Password" autocomplete="current-password">
+            <button type="submit">🔓 Unlock</button>
+            <div class="lock-error" id="lockError"></div>
+        </form>
+    </div>
+
     <!-- Header -->
     <header class="header">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -990,7 +1109,10 @@
                 <h1>📚 Daily Student Attendance</h1>
                 <div class="date" id="headerDate"></div>
             </div>
-            <button class="theme-btn" onclick="openThemeModal()" title="Change theme">🎨</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="theme-btn" onclick="openSecurityModal()" title="App password">🔐</button>
+                <button class="theme-btn" onclick="openThemeModal()" title="Change theme">🎨</button>
+            </div>
         </div>
     </header>
 
@@ -1184,6 +1306,26 @@
         </div>
     </div>
 
+    <!-- Security / Password Modal -->
+    <div class="modal-overlay" id="securityModal" onclick="if(event.target===this) closeSecurityModal()">
+        <div class="modal">
+            <h2>🔐 App Password <button class="modal-close" onclick="closeSecurityModal()">×</button></h2>
+            <div id="securityBody"></div>
+        </div>
+    </div>
+
+    <!-- Confirm YES/NO Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <h2 id="confirmTitle">Are you sure?</h2>
+            <p id="confirmMsg" style="color: var(--text-secondary); font-size: 0.9rem;"></p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-no" onclick="confirmAnswer(false)">NO</button>
+                <button type="button" class="confirm-yes" onclick="confirmAnswer(true)">YES</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -1211,6 +1353,7 @@
             orange: { name: 'Orange', primary: '#f97316', dark: '#ea580c', light: '#fdba74' }
         };
         let themeState = JSON.parse(localStorage.getItem('attendance-theme') || 'null') || { color: 'indigo', dark: false };
+        let appPasswordHash = localStorage.getItem('attendance-password') || '';
         let selectedClass = 'all';   // 'all' | 'none' | <classId>
         let searchQuery = '';
 
@@ -1220,6 +1363,10 @@
             updateHeaderDate();
             applyTheme();
             renderAll();
+            if (appPasswordHash) {
+                document.getElementById('lockOverlay').classList.add('show');
+                setTimeout(() => document.getElementById('unlockInput').focus(), 100);
+            }
         });
 
         // Save data
@@ -1279,14 +1426,15 @@
             const c = getClass(id);
             if (!c) return;
             const count = students.filter(s => s.classId === id).length;
-            if (confirm(`Delete class "${c.name}"? ${count} student(s) will move to "No Class".`)) {
+            askConfirm('Are you sure?', `Delete class "${c.name}"? ${count} student(s) will move to "No Class".`, yes => {
+                if (!yes) return;
                 classes = classes.filter(cl => cl.id !== id);
                 students.forEach(s => { if (s.classId === id) s.classId = ''; });
                 if (selectedClass === id) selectedClass = 'all';
                 saveData();
                 renderAll();
                 showToast(`🗑️ Class ${c.name} deleted`);
-            }
+            });
         }
 
         function updateClassOptions() {
@@ -1394,7 +1542,8 @@
         function deleteStudent(id) {
             const student = students.find(s => s.id === id);
             if (!student) return;
-            if (confirm(`Remove ${student.name}? Their attendance records will also be deleted.`)) {
+            askConfirm('Are you sure?', `Remove ${student.name}? Their attendance records will also be deleted.`, yes => {
+                if (!yes) return;
                 students = students.filter(s => s.id !== id);
 
                 // Clean up attendance records
@@ -1405,7 +1554,7 @@
                 saveData();
                 renderAll();
                 showToast(`🗑️ ${student.name} removed`);
-            }
+            });
         }
 
         // ---------- Edit student ----------
@@ -1949,6 +2098,89 @@
             if (page === 'reports') renderReports();
         }
 
+        // ---------- App Password ----------
+        function hashPw(s) {
+            let h = 5381;
+            for (let i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) | 0; }
+            return String(h);
+        }
+
+        function tryUnlock(e) {
+            if (e) e.preventDefault();
+            const val = document.getElementById('unlockInput').value;
+            if (hashPw(val) === appPasswordHash) {
+                document.getElementById('lockOverlay').classList.remove('show');
+                document.getElementById('unlockInput').value = '';
+                document.getElementById('lockError').textContent = '';
+            } else {
+                document.getElementById('lockError').textContent = '❌ Wrong password. Try again.';
+            }
+        }
+
+        function renderSecurityBody() {
+            const has = !!appPasswordHash;
+            document.getElementById('securityBody').innerHTML = `
+                ${has ? '<label for="secCurrent">Current Password</label><input type="password" id="secCurrent">' : ''}
+                <label for="secNew">New Password</label>
+                <input type="password" id="secNew" placeholder="At least 4 characters">
+                <label for="secConfirm">Confirm New Password</label>
+                <input type="password" id="secConfirm">
+                <button type="button" class="save-btn" onclick="savePassword()">💾 ${has ? 'Change Password' : 'Set Password'}</button>
+                ${has ? '<button type="button" class="save-btn" style="background: var(--danger); margin-top: 10px;" onclick="removePassword()">🗑️ Remove Password</button>' : ''}
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 12px;">If you forget your password, clear the app data to reset.</p>
+            `;
+        }
+
+        function openSecurityModal() {
+            renderSecurityBody();
+            document.getElementById('securityModal').classList.add('show');
+        }
+
+        function closeSecurityModal() {
+            document.getElementById('securityModal').classList.remove('show');
+        }
+
+        function savePassword() {
+            const curEl = document.getElementById('secCurrent');
+            const cur = curEl ? curEl.value : '';
+            const nw = document.getElementById('secNew').value;
+            const cf = document.getElementById('secConfirm').value;
+            if (appPasswordHash && hashPw(cur) !== appPasswordHash) { showToast('⚠️ Current password is wrong'); return; }
+            if (nw.length < 4) { showToast('⚠️ Password must be at least 4 characters'); return; }
+            if (nw !== cf) { showToast('⚠️ Passwords do not match'); return; }
+            appPasswordHash = hashPw(nw);
+            localStorage.setItem('attendance-password', appPasswordHash);
+            closeSecurityModal();
+            showToast('✅ Password saved');
+        }
+
+        function removePassword() {
+            const curEl = document.getElementById('secCurrent');
+            const cur = curEl ? curEl.value : '';
+            if (hashPw(cur) !== appPasswordHash) { showToast('⚠️ Current password is wrong'); return; }
+            appPasswordHash = '';
+            localStorage.removeItem('attendance-password');
+            closeSecurityModal();
+            showToast('✅ Password removed');
+        }
+
+        // ---------- Confirm YES/NO ----------
+        let confirmCallback = null;
+
+        function askConfirm(title, msg, cb) {
+            confirmCallback = cb;
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMsg').textContent = msg;
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        function confirmAnswer(yes) {
+            document.getElementById('confirmModal').classList.remove('show');
+            const cb = confirmCallback;
+            confirmCallback = null;
+            if (cb) cb(yes);
+        }
+
         // ---------- Theme ----------
         function applyTheme() {
             const t = THEMES[themeState.color] || THEMES.indigo;
@@ -2088,18 +2320,20 @@
                     showToast('⚠️ Invalid backup file');
                     return false;
                 }
-                if (!confirm('Replace ALL current data with this backup? Current data will be overwritten.')) return false;
-                students = data.students;
-                classes = data.classes;
-                attendanceData = data.attendanceData;
-                studentCounter = Math.max(parseInt(data.counter, 10) || 0, students.length);
-                selectedClass = 'all';
-                searchQuery = '';
-                const si = document.getElementById('studentSearch');
-                if (si) si.value = '';
-                saveData();
-                renderAll();
-                showToast('✅ Backup restored: ' + students.length + ' students');
+                askConfirm('Are you sure?', 'Replace ALL current data with this backup? Current data will be overwritten.', yes => {
+                    if (!yes) return;
+                    students = data.students;
+                    classes = data.classes;
+                    attendanceData = data.attendanceData;
+                    studentCounter = Math.max(parseInt(data.counter, 10) || 0, students.length);
+                    selectedClass = 'all';
+                    searchQuery = '';
+                    const si = document.getElementById('studentSearch');
+                    if (si) si.value = '';
+                    saveData();
+                    renderAll();
+                    showToast('✅ Backup restored: ' + students.length + ' students');
+                });
                 return true;
             } catch (err) {
                 showToast('⚠️ Could not read backup file');
