@@ -286,10 +286,19 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 14px 16px 8px;
+            margin: 12px 0 8px;
+            padding: 10px 14px;
+            background: var(--card);
+            border-left: 4px solid var(--primary);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
             font-size: 0.95rem;
             font-weight: 700;
             color: var(--primary-dark);
+        }
+
+        .class-header.mgmt {
+            margin: 14px 16px 8px;
         }
 
         .class-header .class-count {
@@ -299,6 +308,43 @@
             border-radius: 12px;
             font-size: 0.7rem;
             font-weight: 700;
+        }
+
+        .late-reminder {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .report-actions button {
+            flex: 1;
+            padding: 9px 6px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .report-actions button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         /* Add Student Form */
@@ -331,6 +377,11 @@
         .add-student-form .class-input {
             width: 38%;
             min-width: 110px;
+        }
+
+        .add-student-form .phone-input {
+            width: 45%;
+            min-width: 150px;
         }
 
         .add-student-form button {
@@ -945,6 +996,7 @@
         <form class="add-student-form" onsubmit="addStudent(event)" style="margin-top: 8px;">
             <input type="text" class="name-input" placeholder="Student name..." required>
             <input type="text" class="class-input" placeholder="Class (e.g. Grade 5)" list="classOptions">
+            <input type="tel" class="phone-input" placeholder="Parent WhatsApp (optional)">
             <button type="submit">+ Add</button>
         </form>
 
@@ -1016,6 +1068,8 @@
                 <input type="text" id="editRoll" required>
                 <label for="editClass">Class</label>
                 <input type="text" id="editClass" list="classOptions" placeholder="No Class">
+                <label for="editPhone">Parent WhatsApp Number</label>
+                <input type="tel" id="editPhone" placeholder="e.g. 923001234567 (country code + number)">
                 <button type="submit" class="save-btn">💾 Save Changes</button>
             </form>
         </div>
@@ -1220,6 +1274,8 @@
             const form = e.target;
             const name = form.querySelector('.name-input').value.trim();
             const className = form.querySelector('.class-input').value.trim();
+            const phoneEl = form.querySelector('.phone-input');
+            const phone = phoneEl ? phoneEl.value.trim() : '';
 
             if (!name) return;
 
@@ -1237,6 +1293,7 @@
                 name: name,
                 rollNo: 'STU' + String(studentCounter).padStart(3, '0'),
                 classId: cls ? cls.id : '',
+                phone: phone,
                 createdAt: new Date().toISOString()
             };
 
@@ -1244,6 +1301,7 @@
             saveData();
             form.querySelector('.name-input').value = '';
             form.querySelector('.class-input').value = '';
+            if (phoneEl) phoneEl.value = '';
             renderAll();
             showToast(`✅ ${name} added${cls ? ' to ' + cls.name : ''}`);
         }
@@ -1276,6 +1334,7 @@
             document.getElementById('editName').value = s.name;
             document.getElementById('editRoll').value = s.rollNo;
             document.getElementById('editClass').value = (s.classId && getClass(s.classId)) ? getClass(s.classId).name : '';
+            document.getElementById('editPhone').value = s.phone || '';
             document.getElementById('editModal').classList.add('show');
         }
 
@@ -1306,6 +1365,7 @@
 
             s.name = name;
             s.rollNo = roll;
+            s.phone = document.getElementById('editPhone').value.trim();
             const cls = getOrCreateClass(clsName);
             s.classId = cls ? cls.id : '';
 
@@ -1536,7 +1596,7 @@
                     if (group.length === 0) return;
                     html += `
                         <div class="class-header">
-                            🏫 ${c.name} <span class="class-count">${group.length}</span>
+                            🏫 ${esc(c.name)} <span class="class-count">${group.length}</span>
                         </div>
                     `;
                     html += group.map(s => studentCardHTML(s, index++)).join('');
@@ -1674,14 +1734,16 @@
                 <h3 style="padding: 0 0 12px; font-size: 0.9rem; color: var(--text-secondary);">STUDENT ATTENDANCE RATES</h3>
                 ${studentStats.map(student => `
                     <div style="background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow);">
+                        ${student.late > 0 ? `
+                        <div class="late-reminder">⏰ Late ${student.late} time${student.late > 1 ? 's' : ''} — reminder will be sent to parent</div>` : ''}
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <div class="student-avatar" style="background: ${getAvatarColor(student.name)}; width: 36px; height: 36px; font-size: 0.9rem;">
                                     ${getInitials(student.name)}
                                 </div>
                                 <div>
-                                    <div style="font-weight: 600;">${student.name}</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${student.rollNo} • ${getClassName(student.classId)}</div>
+                                    <div style="font-weight: 600;">${esc(student.name)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${esc(student.rollNo)} • ${esc(getClassName(student.classId))}${student.phone ? ' • 📱' + esc(student.phone) : ''}</div>
                                 </div>
                             </div>
                             <div style="font-size: 1.25rem; font-weight: 700; color: ${student.percentage >= 75 ? 'var(--success)' : student.percentage >= 50 ? 'var(--warning)' : 'var(--danger)'}">
@@ -1697,6 +1759,10 @@
                             <span>⏰ ${student.late}</span>
                             <span>📋 ${student.leave}</span>
                             <span>Total: ${student.total}</span>
+                        </div>
+                        <div class="report-actions">
+                            <button onclick="whatsAppStudentReport('${student.id}')">💬 Message Report</button>
+                            <button onclick="whatsAppStudentCall('${student.id}')">📞 WhatsApp Call</button>
                         </div>
                     </div>
                 `).join('')}
@@ -1758,8 +1824,8 @@
 
             groups.forEach(g => {
                 html += `
-                    <div class="class-header">
-                        🏫 ${g.name} <span class="class-count">${g.list.length}</span>
+                    <div class="class-header mgmt">
+                        🏫 ${esc(g.name)} <span class="class-count">${g.list.length}</span>
                     </div>
                 `;
                 html += g.list.map(student => `
@@ -1768,8 +1834,8 @@
                             ${getInitials(student.name)}
                         </div>
                         <div class="student-info">
-                            <div class="student-name">${student.name}</div>
-                            <div class="student-roll">${student.rollNo}</div>
+                            <div class="student-name">${esc(student.name)}</div>
+                            <div class="student-roll">${esc(student.rollNo)}${student.phone ? ' • 📱 ' + esc(student.phone) : ''}</div>
                         </div>
                         <button class="edit-btn" onclick="openEditModal('${student.id}')" title="Edit student">✏️</button>
                         <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
@@ -1955,8 +2021,75 @@
         }
 
         // ---------- WhatsApp Reports ----------
+        function phoneDigits(p) {
+            return String(p || '').replace(/\D/g, '');
+        }
+
+        function openWhatsAppTo(phone, text) {
+            const dgs = phoneDigits(phone);
+            const url = dgs
+                ? 'https://wa.me/' + dgs + '?text=' + encodeURIComponent(text)
+                : 'https://wa.me/?text=' + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
         function openWhatsApp(text) {
-            window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+            openWhatsAppTo(null, text);
+        }
+
+        // Per-student stats helper
+        function studentTotals(id) {
+            let p = 0, a = 0, l = 0, lv = 0, t = 0;
+            Object.values(attendanceData).forEach(dd => {
+                if (dd[id]) {
+                    t++;
+                    if (dd[id] === 'present') p++;
+                    else if (dd[id] === 'absent') a++;
+                    else if (dd[id] === 'late') l++;
+                    else if (dd[id] === 'leave') lv++;
+                }
+            });
+            const base = t - lv;
+            const pct = base > 0 ? Math.round((p / base) * 100) : 0;
+            return { p, a, l, lv, t, pct };
+        }
+
+        function studentReportText(s) {
+            const st = studentTotals(s.id);
+            const lines = [];
+            lines.push('📚 *Attendance Report — ' + s.name + '*');
+            lines.push('🏫 Class: ' + getClassName(s.classId) + ' | ' + s.rollNo);
+            lines.push('');
+            lines.push('✅ Present: ' + st.p);
+            lines.push('❌ Absent: ' + st.a);
+            lines.push('⏰ Late: ' + st.l);
+            lines.push('📋 Leave: ' + st.lv);
+            lines.push('📊 Attendance rate: ' + st.pct + '%');
+            if (st.l > 0) {
+                lines.push('');
+                lines.push('⏰ *Reminder:* ' + s.name + ' has been late ' + st.l + ' time' + (st.l > 1 ? 's' : '') + '. Kindly ensure timely arrival at school. Thank you!');
+            }
+            return lines.join('\n');
+        }
+
+        function whatsAppStudentReport(id) {
+            const s = students.find(x => x.id === id);
+            if (!s) return;
+            openWhatsAppTo(s.phone, studentReportText(s));
+            showToast(s.phone ? '📲 Opening WhatsApp...' : '📲 No number saved — choose a contact');
+        }
+
+        function whatsAppStudentCall(id) {
+            const s = students.find(x => x.id === id);
+            if (!s) return;
+            if (!phoneDigits(s.phone)) {
+                showToast('⚠️ Add parent WhatsApp number first');
+                openEditModal(id);
+                return;
+            }
+            // Opens the WhatsApp chat with this contact; tap the call button there
+            window.open('https://wa.me/' + phoneDigits(s.phone), '_blank');
+            showToast('📞 Opening WhatsApp — tap call');
         }
 
         function whatsAppDayReport() {
