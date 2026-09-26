@@ -1216,13 +1216,18 @@
         <div class="section-title">
             <span>Data Backup & Export</span>
         </div>
+        <p style="padding: 0 16px 10px; font-size: 0.78rem; color: var(--text-secondary);">
+            📥 Import students from a CSV/TXT file — one per line: <b>Name, Class, Phone</b>
+        </p>
         <div class="bulk-actions" style="flex-wrap: wrap;">
+            <button class="bulk-btn" onclick="document.getElementById('importStudentsFile').click()">📥 Import Students</button>
+            <button class="bulk-btn" onclick="document.getElementById('importFile').click()">⬆️ Restore Backup (JSON)</button>
             <button class="bulk-btn" onclick="exportBackup()">⬇️ Backup (JSON)</button>
-            <button class="bulk-btn" onclick="document.getElementById('importFile').click()">⬆️ Restore (JSON)</button>
             <button class="bulk-btn" onclick="exportStudentsCSV()">⬇️ Students CSV</button>
             <button class="bulk-btn" onclick="exportAttendanceCSV()">⬇️ Attendance CSV</button>
         </div>
         <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="onImportFile(this)">
+        <input type="file" id="importStudentsFile" accept=".csv,.txt,text/csv,text/plain" style="display:none" onchange="onImportStudentsFile(this)">
     </div>
 
     <!-- Reports Page -->
@@ -2311,6 +2316,68 @@
                 input.value = '';
             };
             reader.readAsText(file);
+        }
+
+        function onImportStudentsFile(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                importStudentsText(String(reader.result));
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function looksLikePhone(v) {
+            return /^[+]?[\d][\d\s\-()]{6,}$/.test(String(v || '').trim());
+        }
+
+        // Bulk-import students from CSV/TXT: one per line "Name, Class, Phone"
+        function importStudentsText(text) {
+            const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(l => l);
+            if (!lines.length) { showToast('⚠️ File is empty'); return; }
+
+            let start = 0;
+            let colName = 0, colClass = 1, colPhone = 2;
+            if (/name/i.test(lines[0])) {
+                const head = lines[0].split(/[,;\t]/).map(h => h.trim().toLowerCase());
+                start = 1;
+                const find = re => head.findIndex(h => re.test(h));
+                const ni = find(/name/); if (ni >= 0) colName = ni;
+                const ci = find(/class/); if (ci >= 0) colClass = ci;
+                const pi = find(/phone|whatsapp|contact|number/); if (pi >= 0) colPhone = pi;
+            }
+
+            let added = 0, skipped = 0;
+            for (let i = start; i < lines.length; i++) {
+                const parts = lines[i].split(/[,;\t]/).map(p => p.trim());
+                const name = (parts[colName] || parts[0] || '').trim();
+                if (!name) { skipped++; continue; }
+                if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) { skipped++; continue; }
+
+                let cls = (parts[colClass] || '').trim();
+                let phone = (parts[colPhone] || '').trim();
+                if (cls && looksLikePhone(cls) && !looksLikePhone(phone)) { phone = cls; cls = (parts[colClass + 1] || '').trim(); }
+                if (phone && !looksLikePhone(phone)) phone = '';
+                if (cls && looksLikePhone(cls)) cls = '';
+
+                studentCounter += 1;
+                const c = getOrCreateClass(cls);
+                students.push({
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2) + i,
+                    name: name,
+                    rollNo: 'STU' + String(studentCounter).padStart(3, '0'),
+                    classId: c ? c.id : '',
+                    phone: phone,
+                    createdAt: new Date().toISOString()
+                });
+                added++;
+            }
+
+            saveData();
+            renderAll();
+            showToast('✅ Imported ' + added + ' students' + (skipped ? ' (' + skipped + ' skipped)' : ''));
         }
 
         function applyImport(text) {
