@@ -69,8 +69,8 @@
         /* Stats Cards */
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
             padding: 16px;
             margin-top: -30px;
         }
@@ -78,7 +78,7 @@
         .stat-card {
             background: var(--card);
             border-radius: var(--radius);
-            padding: 16px;
+            padding: 12px 8px;
             text-align: center;
             box-shadow: var(--shadow);
             transition: transform 0.2s;
@@ -89,7 +89,7 @@
         }
 
         .stat-card .number {
-            font-size: 2rem;
+            font-size: 1.6rem;
             font-weight: 700;
             line-height: 1;
         }
@@ -105,6 +105,56 @@
         .stat-card.present .number { color: var(--success); }
         .stat-card.absent .number { color: var(--danger); }
         .stat-card.late .number { color: var(--warning); }
+        .stat-card.leave .number { color: #0ea5e9; }
+
+        /* Theme button */
+        .theme-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            font-size: 1.3rem;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+
+        .theme-btn:active {
+            transform: scale(0.9);
+        }
+
+        .theme-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 4px 0;
+        }
+
+        .theme-swatch {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .theme-swatch:active {
+            transform: scale(0.9);
+        }
+
+        .theme-swatch.active {
+            border-color: var(--text);
+            box-shadow: 0 0 0 2px var(--card) inset;
+        }
+
+        .leave-reason {
+            font-size: 0.75rem;
+            color: #075985;
+            margin-top: 2px;
+            word-break: break-word;
+        }
 
         /* Date Picker */
         .date-picker {
@@ -195,7 +245,7 @@
             padding: 8px 16px;
             border-radius: 20px;
             border: 2px solid var(--border);
-            background: white;
+            background: var(--card);
             font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-secondary);
@@ -363,6 +413,7 @@
         .status-present { background: #d1fae5; color: #065f46; }
         .status-absent { background: #fee2e2; color: #991b1b; }
         .status-late { background: #fef3c7; color: #92400e; }
+        .status-leave { background: #e0f2fe; color: #075985; }
         .status-none { background: #f1f5f9; color: #64748b; }
 
         .mini-delete {
@@ -438,7 +489,7 @@
             letter-spacing: 0.5px;
         }
 
-        .modal input {
+        .modal input, .modal textarea {
             width: 100%;
             padding: 12px 14px;
             border: 2px solid var(--border);
@@ -446,9 +497,12 @@
             font-size: 1rem;
             outline: none;
             transition: border-color 0.2s;
+            font-family: inherit;
+            background: var(--card);
+            color: var(--text);
         }
 
-        .modal input:focus {
+        .modal input:focus, .modal textarea:focus {
             border-color: var(--primary);
         }
 
@@ -506,7 +560,7 @@
             height: 40px;
             border-radius: 10px;
             border: 2px solid var(--border);
-            background: white;
+            background: var(--card);
             cursor: pointer;
             font-size: 0.85rem;
             font-weight: 600;
@@ -537,6 +591,12 @@
         .attendance-actions button.active-late {
             background: var(--warning);
             border-color: var(--warning);
+            color: white;
+        }
+
+        .attendance-actions button.active-leave {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
             color: white;
         }
 
@@ -658,6 +718,8 @@
         .dot-present { background: var(--success); }
         .dot-absent { background: var(--danger); }
         .dot-late { background: var(--warning); }
+        .dot-leave { background: #0ea5e9; }
+        .dot-total { background: #94a3b8; }
 
         /* Students Page */
         .student-manage-card {
@@ -731,7 +793,8 @@
             padding: 10px;
             border: 2px solid var(--border);
             border-radius: var(--radius);
-            background: white;
+            background: var(--card);
+            color: var(--text);
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
@@ -791,8 +854,13 @@
 
     <!-- Header -->
     <header class="header">
-        <h1>📚 Daily Student Attendance</h1>
-        <div class="date" id="headerDate"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+                <h1>📚 Daily Student Attendance</h1>
+                <div class="date" id="headerDate"></div>
+            </div>
+            <button class="theme-btn" onclick="openThemeModal()" title="Change theme">🎨</button>
+        </div>
     </header>
 
     <!-- Attendance Page -->
@@ -811,6 +879,10 @@
                 <div class="number" id="stat-late">0</div>
                 <div class="label">Late</div>
             </div>
+            <div class="stat-card leave">
+                <div class="number" id="stat-leave">0</div>
+                <div class="label">Leave</div>
+            </div>
         </div>
 
         <!-- Date Picker -->
@@ -828,13 +900,6 @@
 
         <!-- Class Filter Chips -->
         <div class="class-chips" id="classChips"></div>
-
-        <!-- Add Student Form -->
-        <form class="add-student-form" onsubmit="addStudent(event)">
-            <input type="text" class="name-input" placeholder="Student name..." required>
-            <input type="text" class="class-input" placeholder="Class (e.g. Grade 5)" list="classOptions">
-            <button type="submit">+ Add</button>
-        </form>
 
         <!-- Bulk Actions -->
         <div class="bulk-actions" id="bulkActions" style="display:none">
@@ -956,6 +1021,32 @@
         </div>
     </div>
 
+    <!-- Leave Reason Modal -->
+    <div class="modal-overlay" id="leaveModal" onclick="if(event.target===this) closeLeaveModal()">
+        <div class="modal">
+            <h2>📋 Mark on Leave <button class="modal-close" onclick="closeLeaveModal()">×</button></h2>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px;">
+                <strong id="leaveStudentName" style="color: var(--text);"></strong>
+            </p>
+            <label for="leaveReason">Reason (optional)</label>
+            <textarea id="leaveReason" rows="3" placeholder="e.g. Sick, family event, travel..."></textarea>
+            <button type="button" class="save-btn" onclick="confirmLeave()">💾 Save Leave</button>
+        </div>
+    </div>
+
+    <!-- Theme Modal -->
+    <div class="modal-overlay" id="themeModal" onclick="if(event.target===this) closeThemeModal()">
+        <div class="modal">
+            <h2>🎨 Theme <button class="modal-close" onclick="closeThemeModal()">×</button></h2>
+            <label>Accent Color</label>
+            <div class="theme-grid" id="themeGrid"></div>
+            <label style="display: flex; align-items: center; gap: 10px; text-transform: none; font-size: 1rem;">
+                <input type="checkbox" id="darkToggle" style="width: auto;" onchange="toggleDark(this.checked)"> 🌙 Dark Mode
+            </label>
+            <button type="button" class="save-btn" onclick="closeThemeModal()">✅ Done</button>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -967,9 +1058,22 @@
         let students = JSON.parse(localStorage.getItem('attendance-students') || '[]');
         let attendanceData = JSON.parse(localStorage.getItem('attendance-data') || '{}');
         let classes = JSON.parse(localStorage.getItem('attendance-classes') || '[]');
+        let leaveReasons = JSON.parse(localStorage.getItem('attendance-leave-reasons') || '{}');
         // Running total counter: roll numbers keep increasing even after deletions
         let studentCounter = parseInt(localStorage.getItem('attendance-counter') || '0', 10) || students.length;
         let currentDate = new Date().toISOString().split('T')[0];
+        let pendingLeaveId = null;
+
+        // Theme state
+        const THEMES = {
+            indigo: { name: 'Indigo', primary: '#6366f1', dark: '#4f46e5', light: '#a5b4fc' },
+            blue:   { name: 'Blue',   primary: '#3b82f6', dark: '#2563eb', light: '#93c5fd' },
+            green:  { name: 'Green',  primary: '#10b981', dark: '#059669', light: '#6ee7b7' },
+            purple: { name: 'Purple', primary: '#8b5cf6', dark: '#7c3aed', light: '#c4b5fd' },
+            rose:   { name: 'Rose',   primary: '#f43f5e', dark: '#e11d48', light: '#fda4af' },
+            orange: { name: 'Orange', primary: '#f97316', dark: '#ea580c', light: '#fdba74' }
+        };
+        let themeState = JSON.parse(localStorage.getItem('attendance-theme') || 'null') || { color: 'indigo', dark: false };
         let selectedClass = 'all';   // 'all' | 'none' | <classId>
         let searchQuery = '';
 
@@ -977,6 +1081,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('attendanceDate').value = currentDate;
             updateHeaderDate();
+            applyTheme();
             renderAll();
         });
 
@@ -986,6 +1091,14 @@
             localStorage.setItem('attendance-data', JSON.stringify(attendanceData));
             localStorage.setItem('attendance-classes', JSON.stringify(classes));
             localStorage.setItem('attendance-counter', String(studentCounter));
+            localStorage.setItem('attendance-leave-reasons', JSON.stringify(leaveReasons));
+        }
+
+        // Escape HTML for safe rendering of user input
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         // Render everything
@@ -1244,16 +1357,18 @@
         function updateStats(list) {
             const dayData = attendanceData[currentDate] || {};
             const ids = new Set(list.map(s => s.id));
-            let p = 0, a = 0, l = 0;
+            let p = 0, a = 0, l = 0, lv = 0;
             Object.keys(dayData).forEach(id => {
                 if (!ids.has(id)) return;
                 if (dayData[id] === 'present') p++;
                 else if (dayData[id] === 'absent') a++;
                 else if (dayData[id] === 'late') l++;
+                else if (dayData[id] === 'leave') lv++;
             });
             document.getElementById('stat-present').textContent = p;
             document.getElementById('stat-absent').textContent = a;
             document.getElementById('stat-late').textContent = l;
+            document.getElementById('stat-leave').textContent = lv;
         }
 
         // Generate avatar color
@@ -1291,6 +1406,8 @@
             const status = dayData[student.id] || 'none';
             const statusClass = status === 'none' ? 'status-none' : `status-${status}`;
             const statusLabel = status === 'none' ? 'Not marked' : status;
+            const reason = (leaveReasons[currentDate] || {})[student.id] || '';
+            const reasonLine = (status === 'leave' && reason) ? `<div class="leave-reason">📋 ${esc(reason)}</div>` : '';
 
             return `
                 <div class="student-card ${status !== 'none' ? 'marked' : ''}" style="animation-delay: ${Math.min(index, 10) * 0.05}s">
@@ -1298,8 +1415,9 @@
                         ${getInitials(student.name)}
                     </div>
                     <div class="student-info">
-                        <div class="student-name">${student.name}</div>
-                        <div class="student-roll">${student.rollNo} • ${getClassName(student.classId)}</div>
+                        <div class="student-name">${esc(student.name)}</div>
+                        <div class="student-roll">${esc(student.rollNo)} • ${esc(getClassName(student.classId))}</div>
+                        ${reasonLine}
                     </div>
                     <span class="student-status ${statusClass}">${statusLabel}</span>
                     <button class="mini-delete edit" onclick="openEditModal('${student.id}')" title="Edit student">✏️</button>
@@ -1314,9 +1432,58 @@
                         <button class="${status === 'late' ? 'active-late' : ''}"
                                 onclick="markAttendance('${student.id}', 'late')"
                                 title="Late">⏰ Late</button>
+                        <button class="${status === 'leave' ? 'active-leave' : ''}"
+                                onclick="markLeave('${student.id}')"
+                                title="Leave">📋 Leave</button>
                     </div>
                 </div>
             `;
+        }
+
+        // Mark leave (with reason modal)
+        function markLeave(studentId) {
+            const dayData = attendanceData[currentDate] || {};
+            // Toggle off if already on leave
+            if (dayData[studentId] === 'leave') {
+                if (!attendanceData[currentDate]) attendanceData[currentDate] = {};
+                delete attendanceData[currentDate][studentId];
+                if (leaveReasons[currentDate]) delete leaveReasons[currentDate][studentId];
+                saveData();
+                renderStudents();
+                renderHistory();
+                renderReports();
+                return;
+            }
+            const s = students.find(x => x.id === studentId);
+            if (!s) return;
+            pendingLeaveId = studentId;
+            document.getElementById('leaveStudentName').textContent = s.name;
+            document.getElementById('leaveReason').value = (leaveReasons[currentDate] || {})[studentId] || '';
+            document.getElementById('leaveModal').classList.add('show');
+        }
+
+        function closeLeaveModal() {
+            document.getElementById('leaveModal').classList.remove('show');
+            pendingLeaveId = null;
+        }
+
+        function confirmLeave() {
+            if (!pendingLeaveId) { closeLeaveModal(); return; }
+            if (!attendanceData[currentDate]) attendanceData[currentDate] = {};
+            attendanceData[currentDate][pendingLeaveId] = 'leave';
+            const r = document.getElementById('leaveReason').value.trim();
+            if (r) {
+                if (!leaveReasons[currentDate]) leaveReasons[currentDate] = {};
+                leaveReasons[currentDate][pendingLeaveId] = r;
+            } else if (leaveReasons[currentDate]) {
+                delete leaveReasons[currentDate][pendingLeaveId];
+            }
+            saveData();
+            closeLeaveModal();
+            renderStudents();
+            renderHistory();
+            renderReports();
+            showToast('📋 Marked on leave');
         }
 
         // Render students
@@ -1422,7 +1589,11 @@
                             <span class="day-name">${dayName}</span>
                             ${dateStr}
                         </div>
-                        <div class="history-stats">
+                        <div class="history-stats" style="flex-wrap: wrap; gap: 10px 16px;">
+                            <div class="history-stat">
+                                <span class="dot dot-total"></span>
+                                Total: ${students.length}
+                            </div>
                             <div class="history-stat">
                                 <span class="dot dot-present"></span>
                                 Present: ${values.filter(v => v === 'present').length}
@@ -1434,6 +1605,10 @@
                             <div class="history-stat">
                                 <span class="dot dot-late"></span>
                                 Late: ${values.filter(v => v === 'late').length}
+                            </div>
+                            <div class="history-stat">
+                                <span class="dot dot-leave"></span>
+                                Leave: ${values.filter(v => v === 'leave').length}
                             </div>
                         </div>
                     </div>
@@ -1458,7 +1633,7 @@
 
             // Calculate student stats
             const studentStats = students.map(student => {
-                let present = 0, absent = 0, late = 0, total = 0;
+                let present = 0, absent = 0, late = 0, leave = 0, total = 0;
 
                 Object.values(attendanceData).forEach(dayData => {
                     if (dayData[student.id]) {
@@ -1466,12 +1641,15 @@
                         if (dayData[student.id] === 'present') present++;
                         if (dayData[student.id] === 'absent') absent++;
                         if (dayData[student.id] === 'late') late++;
+                        if (dayData[student.id] === 'leave') leave++;
                     }
                 });
 
-                const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+                // Leave days are excused, so rate is over attended (non-leave) days
+                const base = total - leave;
+                const percentage = base > 0 ? Math.round((present / base) * 100) : 0;
 
-                return { ...student, present, absent, late, total, percentage };
+                return { ...student, present, absent, late, leave, total, percentage };
             }).sort((a, b) => b.percentage - a.percentage);
 
             container.innerHTML = `
@@ -1517,6 +1695,7 @@
                             <span>✓ ${student.present}</span>
                             <span>✕ ${student.absent}</span>
                             <span>⏰ ${student.late}</span>
+                            <span>📋 ${student.leave}</span>
                             <span>Total: ${student.total}</span>
                         </div>
                     </div>
@@ -1617,6 +1796,68 @@
             if (page === 'reports') renderReports();
         }
 
+        // ---------- Theme ----------
+        function applyTheme() {
+            const t = THEMES[themeState.color] || THEMES.indigo;
+            const r = document.documentElement.style;
+            r.setProperty('--primary', t.primary);
+            r.setProperty('--primary-dark', t.dark);
+            r.setProperty('--primary-light', t.light);
+            if (themeState.dark) {
+                r.setProperty('--bg', '#0f172a');
+                r.setProperty('--card', '#1e293b');
+                r.setProperty('--text', '#f1f5f9');
+                r.setProperty('--text-secondary', '#94a3b8');
+                r.setProperty('--border', '#334155');
+                r.setProperty('--shadow', '0 1px 3px rgba(0,0,0,0.4)');
+                r.setProperty('--shadow-lg', '0 10px 15px -3px rgba(0,0,0,0.5)');
+            } else {
+                r.setProperty('--bg', '#f8fafc');
+                r.setProperty('--card', '#ffffff');
+                r.setProperty('--text', '#1e293b');
+                r.setProperty('--text-secondary', '#64748b');
+                r.setProperty('--border', '#e2e8f0');
+                r.setProperty('--shadow', '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)');
+                r.setProperty('--shadow-lg', '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)');
+            }
+        }
+
+        function saveTheme() {
+            localStorage.setItem('attendance-theme', JSON.stringify(themeState));
+        }
+
+        function renderThemeGrid() {
+            const grid = document.getElementById('themeGrid');
+            grid.innerHTML = Object.keys(THEMES).map(key => `
+                <button type="button" class="theme-swatch ${themeState.color === key ? 'active' : ''}"
+                        style="background: ${THEMES[key].primary};"
+                        onclick="pickTheme('${key}')" title="${THEMES[key].name}"></button>
+            `).join('');
+        }
+
+        function openThemeModal() {
+            renderThemeGrid();
+            document.getElementById('darkToggle').checked = !!themeState.dark;
+            document.getElementById('themeModal').classList.add('show');
+        }
+
+        function closeThemeModal() {
+            document.getElementById('themeModal').classList.remove('show');
+        }
+
+        function pickTheme(key) {
+            themeState.color = key;
+            saveTheme();
+            applyTheme();
+            renderThemeGrid();
+        }
+
+        function toggleDark(on) {
+            themeState.dark = !!on;
+            saveTheme();
+            applyTheme();
+        }
+
         // ---------- Import / Export ----------
         function downloadFile(filename, content, mime) {
             const blob = new Blob([content], { type: mime });
@@ -1660,11 +1901,14 @@
         }
 
         function exportAttendanceCSV() {
-            const rows = [['Date', 'Student', 'Roll No', 'Class', 'Status']];
+            const rows = [['Date', 'Student', 'Roll No', 'Class', 'Status', 'Reason']];
             Object.keys(attendanceData).sort().forEach(date => {
                 const dayData = attendanceData[date] || {};
                 students.forEach(s => {
-                    if (dayData[s.id]) rows.push([date, s.name, s.rollNo, getClassName(s.classId), dayData[s.id]]);
+                    if (dayData[s.id]) {
+                        const reason = dayData[s.id] === 'leave' ? ((leaveReasons[date] || {})[s.id] || '') : '';
+                        rows.push([date, s.name, s.rollNo, getClassName(s.classId), dayData[s.id], reason]);
+                    }
                 });
             });
             if (rows.length === 1) { showToast('⚠️ No attendance records yet'); return; }
@@ -1721,15 +1965,17 @@
             const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
             const dayData = attendanceData[currentDate] || {};
             const cnt = k => students.filter(s => (dayData[s.id] || 'none') === k).length;
-            const present = cnt('present'), absent = cnt('absent'), late = cnt('late');
+            const present = cnt('present'), absent = cnt('absent'), late = cnt('late'), leave = cnt('leave');
             const lines = [];
             lines.push('📚 *Daily Student Attendance*');
             lines.push('📅 ' + dateStr);
             lines.push('');
+            lines.push('👥 Total: ' + students.length);
             lines.push('✅ Present: ' + present);
             lines.push('❌ Absent: ' + absent);
             lines.push('⏰ Late: ' + late);
-            lines.push('⬜ Not marked: ' + (students.length - present - absent - late));
+            lines.push('📋 Leave: ' + leave);
+            lines.push('⬜ Not marked: ' + (students.length - present - absent - late - leave));
             if (classes.length > 0) {
                 lines.push('');
                 classes.forEach(c => {
@@ -1738,7 +1984,8 @@
                     const p = grp.filter(s => dayData[s.id] === 'present').length;
                     const a = grp.filter(s => dayData[s.id] === 'absent').length;
                     const l = grp.filter(s => dayData[s.id] === 'late').length;
-                    lines.push('🏫 ' + c.name + ': ✅' + p + ' ❌' + a + ' ⏰' + l);
+                    const lv = grp.filter(s => dayData[s.id] === 'leave').length;
+                    lines.push('🏫 ' + c.name + ': ✅' + p + ' ❌' + a + ' ⏰' + l + ' 📋' + lv);
                 });
             }
             const absentList = students.filter(s => dayData[s.id] === 'absent');
@@ -1753,6 +2000,15 @@
                 lines.push('⏰ *Late:*');
                 lateList.forEach(s => lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ')'));
             }
+            const leaveList = students.filter(s => dayData[s.id] === 'leave');
+            if (leaveList.length) {
+                lines.push('');
+                lines.push('📋 *On Leave:*');
+                leaveList.forEach(s => {
+                    const r = (leaveReasons[currentDate] || {})[s.id];
+                    lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ')' + (r ? ' — ' + r : ''));
+                });
+            }
             openWhatsApp(lines.join('\n'));
             showToast('📲 Opening WhatsApp...');
         }
@@ -1765,17 +2021,19 @@
             lines.push('📅 Days tracked: ' + Object.keys(attendanceData).filter(d0 => Object.keys(attendanceData[d0] || {}).length > 0).length);
             lines.push('');
             students.forEach(s => {
-                let p = 0, a = 0, l = 0, t = 0;
+                let p = 0, a = 0, l = 0, lv = 0, t = 0;
                 Object.values(attendanceData).forEach(dd => {
                     if (dd[s.id]) {
                         t++;
                         if (dd[s.id] === 'present') p++;
                         else if (dd[s.id] === 'absent') a++;
-                        else l++;
+                        else if (dd[s.id] === 'late') l++;
+                        else if (dd[s.id] === 'leave') lv++;
                     }
                 });
-                const pct = t > 0 ? Math.round((p / t) * 100) : 0;
-                lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ') — ' + pct + '% (✅' + p + ' ❌' + a + ' ⏰' + l + ')');
+                const base = t - lv;
+                const pct = base > 0 ? Math.round((p / base) * 100) : 0;
+                lines.push('• ' + s.name + ' (' + getClassName(s.classId) + ') — ' + pct + '% (✅' + p + ' ❌' + a + ' ⏰' + l + ' 📋' + lv + ')');
             });
             openWhatsApp(lines.join('\n'));
             showToast('📲 Opening WhatsApp...');
