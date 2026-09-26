@@ -596,6 +596,86 @@
             color: white;
         }
 
+        /* Classes Folder */
+        .folder-card {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--card);
+            border: none;
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            transition: transform 0.2s;
+        }
+
+        .folder-card:active {
+            transform: scale(0.98);
+        }
+
+        .folder-icon {
+            font-size: 1.5rem;
+        }
+
+        .folder-chevron {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .folder-content {
+            margin-top: 12px;
+        }
+
+        .class-folder {
+            background: var(--card);
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .class-folder-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-right: 8px;
+        }
+
+        .cf-expand {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .cf-body {
+            border-top: 1px solid var(--border);
+            padding: 10px;
+        }
+
+        .cf-body .student-manage-card {
+            margin: 0 0 10px;
+        }
+
+        .cf-body .student-manage-card:last-child {
+            margin-bottom: 0;
+        }
+
         /* Attendance Buttons */
         .attendance-actions {
             display: flex;
@@ -1000,13 +1080,16 @@
             <button type="submit">+ Add</button>
         </form>
 
-        <div class="section-title">
-            <span>Classes</span>
-            <span class="count" id="classCount">0</span>
+        <!-- Classes Folder -->
+        <div style="padding: 0 16px 16px;">
+            <button type="button" class="folder-card" onclick="toggleClassesFolder()">
+                <span class="folder-icon" id="folderIcon">📁</span>
+                <span>Classes</span>
+                <span class="class-count" id="folderClassCount">0</span>
+                <span class="folder-chevron" id="folderChevron">▶</span>
+            </button>
+            <div class="folder-content" id="classesFolder" style="display:none"></div>
         </div>
-        <div id="classManagerList"></div>
-
-        <div id="manageStudentList"></div>
 
         <div class="section-title">
             <span>Data Backup & Export</span>
@@ -1209,7 +1292,8 @@
         function updateClassOptions() {
             const dl = document.getElementById('classOptions');
             dl.innerHTML = classes.map(c => `<option value="${c.name}">`).join('');
-            document.getElementById('classCount').textContent = classes.length;
+            const fc = document.getElementById('folderClassCount');
+            if (fc) fc.textContent = classes.length;
         }
 
         // ---------- Filtering ----------
@@ -1769,81 +1853,84 @@
             `;
         }
 
-        // Render class manager (Students page)
-        function renderClassManager() {
-            const container = document.getElementById('classManagerList');
-            if (classes.length === 0) {
-                container.innerHTML = `
-                    <div class="student-manage-card" style="color: var(--text-secondary); font-size: 0.9rem;">
-                        No classes yet. Type a class name when adding a student to create one.
-                    </div>
-                `;
-                return;
-            }
-            container.innerHTML = classes.map(c => {
-                const count = students.filter(s => s.classId === c.id).length;
-                return `
-                    <div class="student-manage-card">
-                        <div class="student-avatar" style="background: var(--primary);">🏫</div>
-                        <div class="student-info">
-                            <div class="student-name">${c.name}</div>
-                            <div class="student-roll">${count} student(s)</div>
-                        </div>
-                        <button class="delete-btn" onclick="deleteClass('${c.id}')" title="Delete class">🗑️</button>
-                    </div>
-                `;
-            }).join('');
+        // ---------- Classes Folder (Students page) ----------
+        let classesFolderOpen = false;
+        let openClassAcc = {};
+
+        function toggleClassesFolder() {
+            classesFolderOpen = !classesFolderOpen;
+            renderManageStudents();
         }
 
-        // Render manage students (grouped by class)
+        function toggleClassAcc(id) {
+            openClassAcc[id] = !openClassAcc[id];
+            renderManageStudents();
+        }
+
+        function classFolderHTML(name, id, group, open, canDelete) {
+            const body = open ? `
+                <div class="cf-body">
+                    ${group.length ? group.map(student => `
+                        <div class="student-manage-card">
+                            <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
+                                ${getInitials(student.name)}
+                            </div>
+                            <div class="student-info">
+                                <div class="student-name">${esc(student.name)}</div>
+                                <div class="student-roll">${esc(student.rollNo)}${student.phone ? ' • 📱 ' + esc(student.phone) : ''}</div>
+                            </div>
+                            <button class="edit-btn" onclick="openEditModal('${student.id}')" title="Edit student">✏️</button>
+                            <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
+                        </div>
+                    `).join('') : '<div style="padding: 8px 6px; color: var(--text-secondary); font-size: 0.85rem;">No students in this class yet.</div>'}
+                </div>` : '';
+
+            return `
+                <div class="class-folder">
+                    <div class="class-folder-head">
+                        <button type="button" class="cf-expand" onclick="toggleClassAcc('${id}')">
+                            🏫 ${esc(name)} <span class="class-count">${group.length}</span>
+                            <span style="margin-left: auto; color: var(--text-secondary); font-size: 0.8rem;">${open ? '▼' : '▶'}</span>
+                        </button>
+                        ${canDelete ? `<button type="button" class="delete-btn" onclick="deleteClass('${id}')" title="Delete class">🗑️</button>` : ''}
+                    </div>
+                    ${body}
+                </div>
+            `;
+        }
+
+        // Render manage students: everything lives inside the "Classes" folder
         function renderManageStudents() {
-            const container = document.getElementById('manageStudentList');
             document.getElementById('manageStudentCount').textContent = students.length;
+            const folder = document.getElementById('classesFolder');
+            document.getElementById('folderIcon').textContent = classesFolderOpen ? '📂' : '📁';
+            document.getElementById('folderChevron').textContent = classesFolderOpen ? '▼' : '▶';
+            document.getElementById('folderClassCount').textContent = classes.length;
+            folder.style.display = classesFolderOpen ? 'block' : 'none';
+            if (!classesFolderOpen) { folder.innerHTML = ''; return; }
 
-            renderClassManager();
+            const unclassed = students.filter(s => !s.classId || !getClass(s.classId));
 
-            if (students.length === 0) {
-                container.innerHTML = `
+            if (classes.length === 0 && unclassed.length === 0) {
+                folder.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">📚</div>
-                        <h3>No students yet</h3>
-                        <p>Add your first student above</p>
+                        <div class="icon">📁</div>
+                        <h3>No classes yet</h3>
+                        <p>Type a class name when adding a student to create one.</p>
                     </div>
                 `;
                 return;
             }
 
             let html = '';
-            const groups = [];
             classes.forEach(c => {
                 const group = students.filter(s => s.classId === c.id);
-                if (group.length) groups.push({ name: c.name, list: group });
+                html += classFolderHTML(c.name, c.id, group, !!openClassAcc[c.id], true);
             });
-            const unclassed = students.filter(s => !s.classId || !getClass(s.classId));
-            if (unclassed.length) groups.push({ name: 'No Class', list: unclassed });
-
-            groups.forEach(g => {
-                html += `
-                    <div class="class-header mgmt">
-                        🏫 ${esc(g.name)} <span class="class-count">${g.list.length}</span>
-                    </div>
-                `;
-                html += g.list.map(student => `
-                    <div class="student-manage-card">
-                        <div class="student-avatar" style="background: ${getAvatarColor(student.name)}">
-                            ${getInitials(student.name)}
-                        </div>
-                        <div class="student-info">
-                            <div class="student-name">${esc(student.name)}</div>
-                            <div class="student-roll">${esc(student.rollNo)}${student.phone ? ' • 📱 ' + esc(student.phone) : ''}</div>
-                        </div>
-                        <button class="edit-btn" onclick="openEditModal('${student.id}')" title="Edit student">✏️</button>
-                        <button class="delete-btn" onclick="deleteStudent('${student.id}')">🗑️</button>
-                    </div>
-                `).join('');
-            });
-
-            container.innerHTML = html;
+            if (unclassed.length) {
+                html += classFolderHTML('No Class', 'none', unclassed, !!openClassAcc['none'], false);
+            }
+            folder.innerHTML = html;
         }
 
         // Switch page
